@@ -8,6 +8,8 @@ RUN npm install
 
 COPY ./server.js ./server.js
 
+# Args introduce layers and should be placed as close to their usage as possible to avoid unnecessary rebuilds.
+
 # Use build argument EXTERNAL_PORT with EXPOSE
 ARG EXTERNAL_PORT
 EXPOSE ${EXTERNAL_PORT}
