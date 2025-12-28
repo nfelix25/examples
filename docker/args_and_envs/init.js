@@ -17,7 +17,7 @@ const BUILD_ARGS = {
 console.log('Build Arguments:', BUILD_ARGS);
 
 const dockerBuildCommand = `docker build --build-arg INTERNAL_PORT=${BUILD_ARGS.INTERNAL_PORT} --build-arg EXTERNAL_PORT=${BUILD_ARGS.EXTERNAL_PORT} -t ${BUILD_ARGS.IMAGE_NAME} .`;
-const dockerRunCommand = `docker run -d -p ${BUILD_ARGS.EXTERNAL_PORT}:${BUILD_ARGS.INTERNAL_PORT} --rm ${BUILD_ARGS.IMAGE_NAME}`;
+const dockerRunCommand = `docker run --env MESSAGE="The sweet sweet sounds." -d -p ${BUILD_ARGS.EXTERNAL_PORT}:${BUILD_ARGS.INTERNAL_PORT} --rm ${BUILD_ARGS.IMAGE_NAME}`;
 
 // Execute the docker build command
 try {

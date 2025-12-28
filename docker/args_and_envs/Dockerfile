@@ -6,14 +6,14 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY ./server.js ./server.js
 
-# Use build argument INTERNAL_PORT with EXPOSE
-ARG INTERNAL_PORT
-EXPOSE ${INTERNAL_PORT}
-
-# Use build argument EXTERNAL_PORT with ENV
+# Use build argument EXTERNAL_PORT with EXPOSE
 ARG EXTERNAL_PORT
-ENV PORT=${EXTERNAL_PORT}
+EXPOSE ${EXTERNAL_PORT}
+
+# Use build argument INTERNAL_PORT with ENV
+ARG INTERNAL_PORT
+ENV PORT=${INTERNAL_PORT}
 
 CMD ["node", "server.js"]
