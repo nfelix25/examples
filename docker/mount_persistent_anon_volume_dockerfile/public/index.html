@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quote Manager</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        height: 100vh;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        display: flex;
+        width: 100%;
+        height: 100%;
+      }
+
+      .main-content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+      }
+
+      .sidebar {
+        width: 350px;
+        background-color: #2c3e50;
+        color: white;
+        padding: 20px;
+        overflow-y: auto;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar h2 {
+        margin-bottom: 20px;
+        font-size: 1.5em;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+      }
+
+      .quote-item {
+        background-color: #34495e;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 4px solid #3498db;
+      }
+
+      .quote-item:hover {
+        background-color: #415a77;
+        transform: translateX(-5px);
+      }
+
+      .quote-item.active {
+        background-color: #3498db;
+        transform: translateX(-5px);
+      }
+
+      .quote-item-content {
+        font-style: italic;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .quote-item-author {
+        text-align: right;
+        font-size: 0.85em;
+        color: #bdc3c7;
+      }
+
+      .view-section {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        min-height: 250px;
+      }
+
+      .view-section h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 1.8em;
+      }
+
+      .quote-display {
+        display: none;
+      }
+
+      .quote-display.active {
+        display: block;
+      }
+
+      .quote-display-content {
+        font-size: 1.5em;
+        font-style: italic;
+        color: #34495e;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        padding: 20px;
+        background-color: #ecf0f1;
+        border-radius: 8px;
+        border-left: 4px solid #3498db;
+      }
+
+      .quote-display-content::before {
+        content: '"';
+        font-size: 2em;
+        color: #3498db;
+      }
+
+      .quote-display-content::after {
+        content: '"';
+        font-size: 2em;
+        color: #3498db;
+      }
+
+      .quote-display-author {
+        text-align: right;
+        font-size: 1.2em;
+        color: #7f8c8d;
+        margin-top: 15px;
+      }
+
+      .add-section {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .add-section h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 1.8em;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: 600;
+      }
+
+      input[type='text'],
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1em;
+        font-family: inherit;
+        transition: border-color 0.3s ease;
+      }
+
+      input[type='text']:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+
+      button {
+        background-color: #3498db;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .message {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .message.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+      }
+
+      .message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+      }
+
+      .empty-state {
+        text-align: center;
+        color: #7f8c8d;
+        padding: 40px 20px;
+      }
+
+      .empty-state svg {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="main-content">
+        <div class="view-section">
+          <h2>Quote Viewer</h2>
+          <div id="quote-display" class="empty-state">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+              />
+            </svg>
+            <p>Select a quote from the sidebar to view it here</p>
+          </div>
+        </div>
+
+        <div class="add-section">
+          <h2>Add New Quote</h2>
+          <form id="quote-form">
+            <div class="form-group">
+              <label for="author">Author *</label>
+              <input
+                type="text"
+                id="author"
+                name="author"
+                required
+                placeholder="Enter author name"
+              />
+            </div>
+            <div class="form-group">
+              <label for="content">Quote Content *</label>
+              <textarea
+                id="content"
+                name="content"
+                required
+                placeholder="Enter the quote"
+              ></textarea>
+            </div>
+            <button type="submit">Save Quote</button>
+            <div id="message" class="message"></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <h2>All Quotes</h2>
+        <div id="quotes-list">
+          <div class="empty-state">
+            <p>Loading quotes...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let quotes = [];
+      let selectedQuoteIndex = null;
+
+      // Fetch quotes on page load
+      async function fetchQuotes() {
+        try {
+          const response = await fetch('/quotes');
+          if (!response.ok) {
+            throw new Error('Failed to fetch quotes');
+          }
+          quotes = await response.json();
+          renderQuotesList();
+        } catch (error) {
+          console.error('Error fetching quotes:', error);
+          document.getElementById('quotes-list').innerHTML = `
+                    <div class="empty-state">
+                        <p>Failed to load quotes</p>
+                    </div>
+                `;
+        }
+      }
+
+      // Render quotes list in sidebar
+      function renderQuotesList() {
+        const quotesList = document.getElementById('quotes-list');
+
+        if (quotes.length === 0) {
+          quotesList.innerHTML = `
+                    <div class="empty-state">
+                        <p>No quotes yet. Add your first quote!</p>
+                    </div>
+                `;
+          return;
+        }
+
+        quotesList.innerHTML = quotes
+          .map(
+            (quote, index) => `
+                <div class="quote-item ${
+                  selectedQuoteIndex === index ? 'active' : ''
+                }" onclick="selectQuote(${index})">
+                    <div class="quote-item-content">${quote.quote}</div>
+                    <div class="quote-item-author">— ${quote.author}</div>
+                </div>
+            `
+          )
+          .join('');
+      }
+
+      // Select and display a quote
+      function selectQuote(index) {
+        selectedQuoteIndex = index;
+        const quote = quotes[index];
+
+        const quoteDisplay = document.getElementById('quote-display');
+        quoteDisplay.innerHTML = `
+                <div class="quote-display active">
+                    <div class="quote-display-content">${quote.quote}</div>
+                    <div class="quote-display-author">— ${quote.author}</div>
+                </div>
+            `;
+
+        renderQuotesList();
+      }
+
+      // Handle form submission
+      document
+        .getElementById('quote-form')
+        .addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const author = document.getElementById('author').value.trim();
+          const content = document.getElementById('content').value.trim();
+          const messageDiv = document.getElementById('message');
+
+          if (!author || !content) {
+            showMessage('Please fill in all fields', 'error');
+            return;
+          }
+
+          try {
+            const response = await fetch('/quotes', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ author, content }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to save quote');
+            }
+
+            showMessage('Quote saved successfully!', 'success');
+
+            // Clear form
+            document.getElementById('author').value = '';
+            document.getElementById('content').value = '';
+
+            // Refresh quotes list
+            await fetchQuotes();
+          } catch (error) {
+            console.error('Error saving quote:', error);
+            showMessage('Error saving quote. Please try again.', 'error');
+          }
+        });
+
+      // Show message helper
+      function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+
+        setTimeout(() => {
+          messageDiv.className = 'message';
+        }, 3000);
+      }
+
+      // Initialize
+      fetchQuotes();
+    </script>
+  </body>
+</html>
