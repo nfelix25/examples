@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  server-1:
+    build:
+      context: .
+      dockerfile: server-1/Dockerfile
+    container_name: server-1
+    environment:
+      - PORT=3000
+      - SERVER_NAME=server-1
+    ports:
+      - '3003:3000'
+    networks:
+      - my-private-network
+
+  server-2:
+    build:
+      context: .
+      dockerfile: server-2/Dockerfile
+    container_name: server-2
+    environment:
+      - PORT=3001
+      - SERVER_NAME=server-2
+    ports:
+      - '3002:3001'
+    networks:
+      - my-private-network
+
+networks:
+  my-private-network:
+    driver: bridge
