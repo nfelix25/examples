@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+        #counter {
+            font-size: 4rem;
+            margin: 2rem;
+        }
+        button {
+            font-size: 1.5rem;
+            padding: 1rem 2rem;
+            margin: 0.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Counter</h1>
+    <div id="counter">0</div>
+    <div>
+        <button onclick="decrement()">-</button>
+        <button onclick="increment()">+</button>
+        <button onclick="reset()">Reset</button>
+    </div>
+
+    <script>
+        let count = 0;
+
+        // Load initial count from server
+        fetch('/api/count')
+            .then(res => res.json())
+            .then(data => {
+                count = data.count;
+                updateDisplay();
+            });
+
+        function updateDisplay() {
+            document.getElementById('counter').textContent = count;
+        }
+
+        function increment() {
+            count++;
+            updateDisplay();
+            saveCount();
+        }
+
+        function decrement() {
+            count--;
+            updateDisplay();
+            saveCount();
+        }
+
+        function reset() {
+            count = 0;
+            updateDisplay();
+            saveCount();
+        }
+
+        function saveCount() {
+            fetch('/api/count', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count })
+            });
+        }
+    </script>
+</body>
+</html>
