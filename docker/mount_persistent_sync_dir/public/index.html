@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Note Saver</title>
+  </head>
+  <body>
+    <h1>Save a Note</h1>
+    <textarea
+      id="noteInput"
+      rows="10"
+      cols="50"
+      placeholder="Type your note here..."
+    ></textarea
+    ><br />
+    <button id="saveButton">Save Note</button>
+    <p id="statusMessage"></p>
+    <script>
+      document
+        .getElementById('saveButton')
+        .addEventListener('click', async () => {
+          const noteContent = document.getElementById('noteInput').value;
+          const statusMessage = document.getElementById('statusMessage');
+
+          try {
+            const response = await fetch('/notes', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ content: noteContent }),
+            });
+
+            if (response.ok) {
+              statusMessage.textContent = 'Note saved successfully!';
+              document.getElementById('noteInput').value = ''; // Clear the textarea
+            } else {
+              statusMessage.textContent = 'Failed to save note.';
+            }
+          } catch (error) {
+            statusMessage.textContent = 'Error: ' + error.message;
+          }
+        });
+    </script>
+  </body>
+</html>
