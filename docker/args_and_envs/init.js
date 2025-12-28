@@ -16,8 +16,19 @@ const BUILD_ARGS = {
 
 console.log('Build Arguments:', BUILD_ARGS);
 
-const dockerBuildCommand = `docker build --build-arg INTERNAL_PORT=${BUILD_ARGS.INTERNAL_PORT} --build-arg EXTERNAL_PORT=${BUILD_ARGS.EXTERNAL_PORT} -t ${BUILD_ARGS.IMAGE_NAME} .`;
-const dockerRunCommand = `docker run --env MESSAGE="The sweet sweet sounds." -d -p ${BUILD_ARGS.EXTERNAL_PORT}:${BUILD_ARGS.INTERNAL_PORT} --rm ${BUILD_ARGS.IMAGE_NAME}`;
+// INTERNAL_PORT will be mapped to an ENV variable inside the container as PORT via build-arg/Dockerfile
+const build_arg_1 = `--build-arg INTERNAL_PORT=${BUILD_ARGS.INTERNAL_PORT}`;
+
+// EXTERNAL_PORT will be used to map the container port to the host machine port at runtime and EXPOSE via build-arg/Dockerfile
+const build_arg_2 = `--build-arg EXTERNAL_PORT=${BUILD_ARGS.EXTERNAL_PORT}`;
+
+// MESSAGE will be passed as an ENV variable at runtime, then returned in the response by the server
+const MESSAGE = 'The sweet sweet sounds.';
+
+const dockerBuildCommand = `docker build ${build_arg_1} ${build_arg_2} -t ${BUILD_ARGS.IMAGE_NAME} .`;
+
+// ALso using env file to pass STYLES variable
+const dockerRunCommand = `docker run --env-file ._env --env MESSAGE="${MESSAGE}" -d -p ${BUILD_ARGS.EXTERNAL_PORT}:${BUILD_ARGS.INTERNAL_PORT} --rm ${BUILD_ARGS.IMAGE_NAME}`;
 
 // Execute the docker build command
 try {
@@ -38,14 +49,4 @@ try {
   console.log('Docker run command executed successfully:', dockerRunOutput);
 } catch (error) {
   console.error('Error executing docker run command:', error.message);
-}
-
-// Ping the running container to verify it's up
-try {
-  const pingCommand = `curl http://localhost:${BUILD_ARGS.EXTERNAL_PORT}`;
-  console.log('Pinging the server with command:', pingCommand);
-  const pingOutput = execSync(pingCommand, { encoding: 'utf-8' });
-  console.log('Ping output:', pingOutput);
-} catch (error) {
-  console.error('Error pinging the server:', error.message);
 }
