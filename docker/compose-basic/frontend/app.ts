@@ -4,9 +4,7 @@ interface Item {
   name: string;
 }
 
-const API_URL = `http://${
-  import.meta.env.IS_DOCKER ? 'backend' : 'localhost'
-}:${import.meta.env.PORT}`;
+const API_URL = `http://localhost:${import.meta.env.BE_PORT}`;
 
 async function loadItems(): Promise<void> {
   try {

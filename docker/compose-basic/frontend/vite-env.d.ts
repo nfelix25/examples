@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly IS_DOCKER: boolean;
+  readonly BE_PORT: number;
   readonly PORT: number;
 }
 
