@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Item Manager</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #333;
+      }
+      .add-item {
+        margin-bottom: 20px;
+      }
+      input {
+        padding: 8px;
+        width: 70%;
+        margin-right: 10px;
+      }
+      button {
+        padding: 8px 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .items-list {
+        list-style-type: none;
+        padding: 0;
+      }
+      .items-list li {
+        background-color: #f4f4f4;
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Item Manager</h1>
+
+    <div class="add-item">
+      <input type="text" id="itemInput" placeholder="Enter item name" />
+      <button id="addBtn">Add Item</button>
+    </div>
+
+    <h2>Items:</h2>
+    <ul class="items-list" id="itemsList"></ul>
+
+    <script src="app.js"></script>
+  </body>
+</html>

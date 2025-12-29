@@ -1,0 +1,19 @@
+const mongoose = require('mongoose');
+
+const MONGO_CONTAINER_NAME = process.env.MONGO_CONTAINER_NAME;
+const mongoURL = `mongodb://${MONGO_CONTAINER_NAME}:27017/test`;
+
+console.log('Connecting to MongoDB at:', mongoURL);
+
+// Connect to MongoDB
+mongoose
+  .connect(mongoURL)
+  .then(() => console.log('Connected to MongoDB at', mongoURL))
+  .catch((err) => console.error('MongoDB connection error:', err));
+
+// Define a simple schema and model
+const itemSchema = new mongoose.Schema({
+  name: String,
+});
+
+export const Item = mongoose.model('Item', itemSchema);
