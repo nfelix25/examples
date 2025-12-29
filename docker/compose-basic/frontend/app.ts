@@ -1,33 +1,51 @@
 // Simple item manager
 interface Item {
-  id: number;
+  _id: string;
   name: string;
 }
 
-let items: Item[] = [];
-let nextId = 1;
+const API_URL = `http://${
+  import.meta.env.IS_DOCKER ? 'backend' : 'localhost'
+}:${import.meta.env.PORT}`;
 
-function addItem(name: string): void {
+async function loadItems(): Promise<void> {
+  try {
+    const response = await fetch(`${API_URL}/items`);
+    const items: Item[] = await response.json();
+    renderItems(items);
+  } catch (error) {
+    console.error('Failed to load items:', error);
+  }
+}
+
+async function addItem(name: string): Promise<void> {
   if (name.trim() === '') {
     return;
   }
 
-  const item: Item = {
-    id: nextId++,
-    name: name.trim(),
-  };
+  try {
+    await fetch(`${API_URL}/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: name.trim() }),
+    });
 
-  items.push(item);
-  renderItems();
+    // Reload items after adding
+    await loadItems();
 
-  // Clear input
-  const input = document.getElementById('itemInput') as HTMLInputElement;
-  if (input) {
-    input.value = '';
+    // Clear input
+    const input = document.getElementById('itemInput') as HTMLInputElement;
+    if (input) {
+      input.value = '';
+    }
+  } catch (error) {
+    console.error('Failed to add item:', error);
   }
 }
 
-function renderItems(): void {
+function renderItems(items: Item[]): void {
   const listElement = document.getElementById('itemsList');
   if (!listElement) {
     return;
@@ -63,5 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  renderItems();
+  // Load items on page load
+  loadItems();
 });

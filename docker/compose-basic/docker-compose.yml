@@ -9,12 +9,21 @@ services:
     # Compose creates a shared network and adds all services by default
     networks:
     # - app-net
+
   backend:
     volumes:
       - ./backend/logs:/logs
     environment:
       - PORT=4444
       # alt format PORT: 4444
+    depends_on:
+      - mongodb
+
+  frontend:
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
 
   volumes:
     data: # Needed for named volumes eg services.mongodb.volumes - Anon and bind-mounts not needed here

@@ -2,11 +2,14 @@
   "name": "frontend",
   "version": "1.0.0",
   "description": "Simple frontend for learning Docker Compose",
+  "type": "module",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0"
   }
 }
