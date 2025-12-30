@@ -2,28 +2,44 @@ services:
   # Compose creates a shared network and adds all services by default
   mongodb:
     image: mongo:latest
+    # The MongoDB container stores its data internally in the /data/db directory by default
     volumes:
       - data:/data/db
     env_file:
       - ./db/.env
     # Compose creates a shared network and adds all services by default
-    networks:
+    # networks:
     # - app-net
 
   backend:
+    build:
+      ./backend
+      # Or more explicit:
+      # context: ./backend
+      # dockerfile: Dockerfile
+      # args:
+      #   NODE_ENV: production
     volumes:
-      - ./backend/logs:/logs
+      # Named volume
+      - logs:/app/logs
+      # Anonymous volume
+      - /app/node_modules
+      # Relative paths allowed for bind-mounts in docker-compose
+      - ./backend:/app
     environment:
       - PORT=4444
       # alt format PORT: 4444
+    ports:
+      - '4444:4444'
     depends_on:
       - mongodb
 
-  frontend:
-    env_file:
-      - ./frontend/.env
-    depends_on:
-      - backend
+  # frontend:
+  #   env_file:
+  #     - ./frontend/.env
+  #   depends_on:
+  #     - backend
 
-  volumes:
-    data: # Needed for named volumes eg services.mongodb.volumes - Anon and bind-mounts not needed here
+volumes:
+  data: # Needed for named volumes eg services.mongodb.volumes - Anon and bind-mounts not needed here
+  logs:
