@@ -41,7 +41,6 @@ const accessLogStream = fs.createWriteStream(
 
 // setup the logger
 app.use(morgan('combined', { stream: accessLogStream }));
-app.use(morgan('combined'));
 
 // Middleware to parse JSON
 app.use(express.json());
