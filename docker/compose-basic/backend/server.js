@@ -3,7 +3,20 @@ const fs = require('fs');
 const path = require('path');
 const morgan = require('morgan');
 
-const { Item } = require('../db/db');
+const { Item } = require('./ItemSchema.js');
+const { default: mongoose } = require('mongoose');
+
+// Normally may have db logic in backend service, this is overkill for learning
+
+const MONGO_CONTAINER_NAME = process.env.MONGO_CONTAINER_NAME;
+const MONGO_USERNAME = process.env.MONGO_INITDB_ROOT_USERNAME;
+const MONGO_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD;
+
+const mongoURL = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CONTAINER_NAME}:27017/test?authSource=admin`;
+
+// Connect to MongoDB
+mongoose.connect(mongoURL);
+
 const port = process.env.PORT;
 const logDirectory = path.join(__dirname, '../logs');
 

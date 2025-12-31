@@ -6,17 +6,24 @@ services:
     volumes:
       - data:/data/db
     env_file:
-      - ./db/.env
+      - ./.env.backend
     # Compose creates a shared network and adds all services by default
     # networks:
     # - app-net
 
+  db:
+    build: ./db
+    depends_on:
+      - mongodb
+    env_file:
+      - ./.env.backend
+
   backend:
     build:
-      ./backend
-      # Or more explicit:
-      # context: ./backend
-      # dockerfile: Dockerfile
+      # Explicit example with dockerfile in root and context (build dir) separate:
+      context: ./backend
+      # Dockerfile path relative to the build context
+      dockerfile: ../Dockerfile-backend
       # args:
       #   NODE_ENV: production
     volumes:
@@ -29,10 +36,12 @@ services:
     environment:
       - PORT=4444
       # alt format PORT: 4444
+    env_file:
+      - ./.env.backend
     ports:
       - '4444:4444'
     depends_on:
-      - mongodb
+      - db
 
   # frontend:
   #   env_file:

@@ -13,10 +13,3 @@ mongoose
   .connect(mongoURL)
   .then(() => console.log('Connected to MongoDB at', mongoURL))
   .catch((err) => console.error('MongoDB connection error:', err));
-
-// Define a simple schema and model
-const itemSchema = new mongoose.Schema({
-  name: String,
-});
-
-export const Item = mongoose.model('Item', itemSchema);
