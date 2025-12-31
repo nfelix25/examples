@@ -3,8 +3,8 @@ interface Item {
   _id: string;
   name: string;
 }
-
-const API_URL = `http://localhost:${import.meta.env.BE_PORT}`;
+console.log(import.meta.env);
+const API_URL = `http://localhost:${import.meta.env.VITE_BE_PORT}`;
 
 async function loadItems(): Promise<void> {
   try {

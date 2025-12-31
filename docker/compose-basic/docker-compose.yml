@@ -43,11 +43,14 @@ services:
     depends_on:
       - db
 
-  # frontend:
-  #   env_file:
-  #     - ./frontend/.env
-  #   depends_on:
-  #     - backend
+  frontend:
+    build: ./frontend
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    ports:
+      - '4173:80'
 
 volumes:
   data: # Needed for named volumes eg services.mongodb.volumes - Anon and bind-mounts not needed here

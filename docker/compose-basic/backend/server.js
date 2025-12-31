@@ -5,6 +5,7 @@ const morgan = require('morgan');
 
 const { Item } = require('./ItemSchema.js');
 const { default: mongoose } = require('mongoose');
+const cors = require('cors');
 
 // Normally may have db logic in backend service, this is overkill for learning
 
@@ -21,6 +22,13 @@ const port = process.env.PORT;
 const logDirectory = path.join(__dirname, '../logs');
 
 const app = express();
+
+// Allows CORS from frontend container
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:4173',
+  })
+);
 
 // ensure log directory exists
 fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
