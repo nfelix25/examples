@@ -27,7 +27,7 @@ services:
       # args:
       #   NODE_ENV: production
     volumes:
-      # Named volume
+      # Named volume for persisting logs inside "container" outside container lifecycle
       - logs:/app/logs
       # Anonymous volume
       - /app/node_modules

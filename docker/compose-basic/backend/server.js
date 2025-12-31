@@ -19,7 +19,7 @@ const mongoURL = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CONTAINE
 mongoose.connect(mongoURL);
 
 const port = process.env.PORT;
-const logDirectory = path.join(__dirname, '../logs');
+const logDirectory = path.join(__dirname, 'logs');
 
 const app = express();
 
@@ -41,6 +41,7 @@ const accessLogStream = fs.createWriteStream(
 
 // setup the logger
 app.use(morgan('combined', { stream: accessLogStream }));
+app.use(morgan('combined'));
 
 // Middleware to parse JSON
 app.use(express.json());
