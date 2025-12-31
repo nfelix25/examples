@@ -5,6 +5,13 @@ COPY package*.json ./
 RUN npm install
 # Copy remaining frontend files into the container before running the build.
 COPY . .
+
+# Pass build arguments for ports to the frontend build process.
+ARG FRONTEND_PORT
+ARG BACKEND_PORT
+ENV VITE_FE_PORT=$FRONTEND_PORT
+ENV VITE_BE_PORT=$BACKEND_PORT
+
 # Build the production-ready assets (includes bundling, minification, etc.).
 RUN npm run build
 # Runtime stage uses nginx to serve the built assets: no Node runtime needed here.

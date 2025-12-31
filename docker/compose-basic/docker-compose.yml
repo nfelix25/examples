@@ -34,23 +34,27 @@ services:
       # Relative paths allowed for bind-mounts in docker-compose
       - ./backend:/app
     environment:
-      - PORT=4444
+      # Example of passing env var from .env file to container
+      - PORT=${BACKEND_PORT}
       # alt format PORT: 4444
     env_file:
       - ./.env.backend
     ports:
-      - '4444:4444'
+      - '${BACKEND_PORT}:4444'
     depends_on:
       - db
 
   frontend:
-    build: ./frontend
-    env_file:
-      - ./frontend/.env
+    build:
+      context: ./frontend
+      args:
+        - FRONTEND_PORT=${FRONTEND_PORT}
+        - BACKEND_PORT=${BACKEND_PORT}
+
     depends_on:
       - backend
     ports:
-      - '4173:80'
+      - '${FRONTEND_PORT}:80'
 
 volumes:
   data: # Needed for named volumes eg services.mongodb.volumes - Anon and bind-mounts not needed here
