@@ -1,0 +1,8 @@
+services:
+  mynpm:
+    build: .
+    container_name: npm-utility-container
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./:/app

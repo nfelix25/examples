@@ -1,0 +1,12 @@
+services:
+  server:
+    image: 'nginx:stable-alpine'
+    ports:
+      # nginx exposes port 80 internally
+      - '${SERVER_PORT}:80'
+
+  # php:
+  # mysql:
+  # composer:
+  # artisan:
+  # npm:
