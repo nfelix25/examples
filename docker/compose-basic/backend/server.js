@@ -23,10 +23,10 @@ const logDirectory = path.join(__dirname, 'logs');
 
 const app = express();
 
-// Allows CORS from frontend container
+// Allows CORS from frontend container - Normally would have whitelist and more security
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4173',
+    origin: ['http://localhost:4173', 'http://localhost:5555'],
   })
 );
 
