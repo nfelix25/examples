@@ -2,7 +2,7 @@ FROM php:8.2-fpm-alpine
 
 WORKDIR /var/www/html
 
-# COPY src .
+COPY src .
 
 # COPY php-entrypoint.sh /usr/local/bin/
 
