@@ -23,6 +23,11 @@ services:
       - ./env/mysql.env
 
   composer:
+    build:
+      context: ./dockerfiles
+      dockerfile: composer.dockerfile
+    volumes:
+      - ./src:/var/www/html
 
   # artisan:
   # npm:
