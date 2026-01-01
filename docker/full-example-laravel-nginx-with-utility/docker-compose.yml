@@ -6,10 +6,10 @@ services:
     ports:
       # nginx exposes port 80 internally
       - '${SERVER_PORT}:80'
-    # volumes:
-    # https://hub.docker.com/_/nginx - :ro = read only volume
-    # - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    # - ./src:/var/www/html:ro
+    volumes:
+      # https://hub.docker.com/_/nginx - :ro = read only volume
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./src:/var/www/html:ro
     depends_on:
       - php
       - mysql
@@ -18,8 +18,8 @@ services:
     build:
       context: .
       dockerfile: dockerfiles/php.dockerfile
-    # volumes:
-    # - ./src:/var/www/html:delegated # 'delegated' improves performance by not instantly syncing changes from host to container
+    volumes:
+      - ./src:/var/www/html:delegated # 'delegated' improves performance by not instantly syncing changes from host to container
 
   # Based on outdated tutorial; Laravel composer now uses sqlite, this requires running docker compose run --rm php php artisan migrate --force as well as changing DB_CONNECTION in src/.env
   mysql:
