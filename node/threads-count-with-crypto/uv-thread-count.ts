@@ -1,6 +1,9 @@
 import { pbkdf2 } from 'node:crypto';
 import { argv } from 'node:process';
 
+// Env variable must be set before loading any module that uses libuv thread pool
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '4';
+
 const start = Date.now();
 
 const _poolSize = parseInt(process.env.UV_THREADPOOL_SIZE || '4');
@@ -25,7 +28,7 @@ while (i < count) {
     function (args: [number, number]) {
       const [i, pool] = args;
       console.log(i + 1, pool, Date.now() - start);
-    }.bind(this, [i, pool])
+    }.bind(this, [i, pool]),
   );
 
   i++;
