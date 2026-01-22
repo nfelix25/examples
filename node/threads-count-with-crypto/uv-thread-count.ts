@@ -14,11 +14,12 @@ process.env.UV_THREADPOOL_SIZE =
 
 const start = Date.now();
 
-const _poolSize = parseInt(process.env.UV_THREADPOOL_SIZE || '4');
+const _poolSize = parseInt(process.env.UV_THREADPOOL_SIZE);
 const poolSize = isNaN(_poolSize) ? 4 : _poolSize;
 
 const _count = parseInt(argv[2]);
 const count = isNaN(_count) ? 5 : _count;
+
 let i = 0,
   pool = 0;
 
