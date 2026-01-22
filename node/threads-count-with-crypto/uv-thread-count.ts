@@ -1,8 +1,16 @@
 import { pbkdf2 } from 'node:crypto';
 import { argv } from 'node:process';
+import { cpus } from 'node:os';
+
+// Get CPU information
+const cpuCores = cpus();
+const coreCount = cpuCores.length; // Number of logical cores (threads)
+console.log(`CPU cores/threads: ${coreCount}`);
+console.log(`CPU model: ${cpuCores[0].model}`);
 
 // Env variable must be set before loading any module that uses libuv thread pool
-process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '4';
+process.env.UV_THREADPOOL_SIZE =
+  process.env.UV_THREADPOOL_SIZE || `${coreCount}`;
 
 const start = Date.now();
 
