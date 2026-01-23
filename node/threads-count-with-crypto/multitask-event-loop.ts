@@ -92,9 +92,14 @@ doHash();
  * 2. FILE READS (fs.readFile):
  *    - Uses the libuv thread pool (default 4 threads via UV_THREADPOOL_SIZE)
  *    - Why? Most filesystems lack true async I/O APIs, so libuv simulates it
- *    - A thread from the pool performs the blocking read syscall
- *    - Without contention: completes very fast (~55ms for local file)
- *    - With contention: delayed until a thread becomes available
+ *    - fs.readFile() is actually a SEQUENCE of threadpool operations:
+ *      1. open() - open the file descriptor (threadpool)
+ *      2. fstat() - get file size to allocate buffer (threadpool)
+ *      3. read() - read file contents (threadpool)
+ *      4. close() - close file descriptor (threadpool)
+ *    - Each step must complete before the next can start
+ *    - Without contention: all steps complete quickly (~55ms total)
+ *    - With contention: each step may queue, compounding the delay
  *
  * 3. CRYPTO OPERATIONS (pbkdf2):
  *    - Uses the libuv thread pool (CPU-intensive work)
@@ -102,13 +107,15 @@ doHash();
  *    - With default 4 threads: first 4 hashes run in parallel
  *
  * 4. THREAD POOL CONTENTION - WHY FILE READ QUEUES DESPITE BEING CALLED FIRST:
- *    - With 4 hashes + 1 file read = 5 operations competing for 4 threads
+ *    - With 4 hashes + 1 file read = 5+ operations competing for 4 threads
+ *      (Actually more like 9 operations: 4 hashes + 4 file operations from fs.readFile)
  *    - Even though doFileRead() is called before doHash(), all operations are
  *      submitted to the thread pool synchronously in the same tick
  *    - The thread pool doesn't guarantee FIFO (first-in-first-out) ordering
- *    - When 5 operations arrive "simultaneously", the pool picks 4 to run immediately
- *    - The 5th operation (often the file read) gets queued in the thread pool's work queue
- *    - The file read only starts after one of the hash operations completes
+ *    - When many operations arrive "simultaneously", the pool picks 4 to run immediately
+ *    - fs.readFile()'s first operation (open) may get queued behind the hashes
+ *    - Even if open() completes, fstat() and read() may also queue behind remaining hashes
+ *    - This sequential dependency amplifies the delay - each step waits for thread availability
  *    - Result: file read is delayed from ~55ms to ~780ms (waiting for thread availability)
  *    - Call order doesn't determine execution order when thread pool is saturated
  *
