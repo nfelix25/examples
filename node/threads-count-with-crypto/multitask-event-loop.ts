@@ -2,7 +2,8 @@ import https from 'node:https';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
-// process.env.UV_THREADPOOL_SIZE = '5';
+// process.env.UV_THREADPOOL_SIZE = '2';
+// process.env.UV_THREADPOOL_SIZE = '4';
 
 const __filename = fs.realpathSync(process.argv[1]);
 
@@ -142,6 +143,7 @@ doHash();
  * - Understanding which operations use which mechanism is critical for
  *   performance tuning and avoiding bottlenecks
  *
+ *
  * BONUS - Output with process.env.UV_THREADPOOL_SIZE = '5':
  *
  * [0ms] Script start
@@ -155,4 +157,19 @@ doHash();
  *
  * Increased thread pool size to 5 allows all operations to run concurrently,
  * eliminating file read delay. File read completes at ~50-75ms as expected.
+ *
+ *
+ * BONUS - Output with process.env.UV_THREADPOOL_SIZE = '2':
+ *
+ * Highlights the effect of readfile requiring multiple thread pool operations,
+ * causing it to be delayed further when the pool size is smaller.
+ *
+ * [0ms] Script start
+ * [191ms] CALLBACK: Response received (poll phase)
+ * [229ms] CALLBACK: Response ended (poll phase)
+ * [709ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [732ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [1383ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [1384ms] FILE READ: fs.readFile completed (poll phase)
+ * [1407ms] HASH: pbkdf2 completed (libuv thread pool)
  */
