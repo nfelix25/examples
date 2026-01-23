@@ -45,61 +45,86 @@ doHash();
 doHash();
 
 /**
-
-doRequestCallback();
-doFileRead();
-doHash();
-doHash();
-doHash();
-doHash();
-
-[0ms] Script start
-[182ms] CALLBACK: Response received (poll phase)
-[215ms] CALLBACK: Response ended (poll phase)
-[783ms] HASH: pbkdf2 completed (libuv thread pool)
-[784ms] HASH: pbkdf2 completed (libuv thread pool)
-[784ms] FILE READ: fs.readFile completed (poll phase)
-[785ms] HASH: pbkdf2 completed (libuv thread pool)
-[786ms] HASH: pbkdf2 completed (libuv thread pool)
-
-OR
-
-[0ms] Script start
-[184ms] CALLBACK: Response received (poll phase)
-[227ms] CALLBACK: Response ended (poll phase)
-[755ms] HASH: pbkdf2 completed (libuv thread pool)
-[755ms] FILE READ: fs.readFile completed (poll phase)
-[756ms] HASH: pbkdf2 completed (libuv thread pool)
-[757ms] HASH: pbkdf2 completed (libuv thread pool)
-[758ms] HASH: pbkdf2 completed (libuv thread pool)
-
-
-Yet, when hash calls are removed, file read always completes before the request and faster then if hashes are present:
-
-
-doRequestCallback();
-doFileRead();
-
-[0ms] Script start
-[55ms] FILE READ: fs.readFile completed (poll phase)
-[209ms] CALLBACK: Response received (poll phase)
-[248ms] CALLBACK: Response ended (poll phase)
-
-
-This is expected behavior due to the way the Node.js event loop prioritizes I/O operations and CPU-bound tasks.
-Node.js uses an event-driven, non-blocking I/O model, which allows it to handle multiple operations concurrently.
-
-1. I/O Operations (like HTTP requests and file reads) are handled in the poll phase of the event loop.
-   They are generally prioritized because they are non-blocking and can be completed quickly.
-
-2. CPU-bound tasks (like pbkdf2 hashing) are offloaded to the libuv thread pool.
-   These tasks can take longer to complete and do not block the main event loop,
-   but they can delay the processing of other events if they consume significant resources.
-
-When hash calls are present, they occupy threads in the libuv thread pool,
-potentially delaying the completion of other I/O operations like file reads.
-When hash calls are removed, the file read operation can complete more quickly,
-as there are no competing CPU-bound tasks in the thread pool.
-
-This demonstrates how CPU-bound tasks can impact the performance of I/O operations in a Node.js application.
+ * LIBUV THREAD POOL AND EVENT LOOP INTERACTION DEMONSTRATION
+ *
+ * This example demonstrates the relationship between the libuv thread pool,
+ * different types of I/O operations, and the Node.js event loop phases.
+ *
+ * EXPECTED OUTPUT WITH HASHES:
+ *
+ * doRequestCallback();
+ * doFileRead();
+ * doHash();
+ * doHash();
+ * doHash();
+ * doHash();
+ *
+ * [0ms] Script start
+ * [182ms] CALLBACK: Response received (poll phase)
+ * [215ms] CALLBACK: Response ended (poll phase)
+ * [783ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [784ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [784ms] FILE READ: fs.readFile completed (poll phase)
+ * [785ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [786ms] HASH: pbkdf2 completed (libuv thread pool)
+ *
+ * EXPECTED OUTPUT WITHOUT HASHES:
+ *
+ * doRequestCallback();
+ * doFileRead();
+ *
+ * [0ms] Script start
+ * [55ms] FILE READ: fs.readFile completed (poll phase)
+ * [209ms] CALLBACK: Response received (poll phase)
+ * [248ms] CALLBACK: Response ended (poll phase)
+ *
+ *
+ * KEY INSIGHTS - WHY THE TIMING AND ORDER DIFFER:
+ *
+ * 1. HTTPS REQUESTS (Network I/O):
+ *    - Handled by the OS kernel using native async I/O (epoll/kqueue)
+ *    - Does NOT use the libuv thread pool
+ *    - Completes when the network response arrives (~180-200ms network latency)
+ *    - Callback fires in the poll phase when the socket becomes readable
+ *
+ * 2. FILE READS (fs.readFile):
+ *    - Uses the libuv thread pool (default 4 threads via UV_THREADPOOL_SIZE)
+ *    - Why? Most filesystems lack true async I/O APIs, so libuv simulates it
+ *    - A thread from the pool performs the blocking read syscall
+ *    - Without contention: completes very fast (~55ms for local file)
+ *    - With contention: delayed until a thread becomes available
+ *
+ * 3. CRYPTO OPERATIONS (pbkdf2):
+ *    - Uses the libuv thread pool (CPU-intensive work)
+ *    - Each hash takes ~750-800ms to complete
+ *    - With default 4 threads: first 4 hashes run in parallel
+ *
+ * 4. THREAD POOL CONTENTION:
+ *    - With 4 hashes + 1 file read = 5 operations competing for 4 threads
+ *    - The file read gets queued because all 4 threads are busy with hashing
+ *    - File read only starts after one of the hash operations completes
+ *    - Result: file read is delayed from ~55ms to ~780ms (waiting for thread availability)
+ *
+ * 5. HTTPS COMPLETES FIRST REGARDLESS:
+ *    - Network I/O is completely independent of the thread pool
+ *    - The HTTPS request uses kernel-level async I/O (no threads needed)
+ *    - It completes based on network latency, unaffected by CPU workload
+ *    - This is why it finishes at ~180ms whether or not hashes are running
+ *
+ * 6. EVENT LOOP POLL PHASE:
+ *    - All I/O completion callbacks (network, file) fire in the poll phase
+ *    - The event loop checks for completed operations each iteration
+ *    - As operations complete (in libuv or kernel), their callbacks are queued
+ *    - Callbacks execute in the order their operations complete
+ *
+ * ARCHITECTURAL TAKEAWAYS:
+ *
+ * - Not all I/O uses the thread pool - network I/O uses kernel async mechanisms
+ * - File I/O uses the thread pool because most filesystems lack true async APIs
+ * - Thread pool size (UV_THREADPOOL_SIZE) directly affects throughput for
+ *   file operations and crypto work
+ * - CPU-bound threadpool operations can starve file I/O by monopolizing threads
+ * - Network I/O performance is isolated from thread pool congestion
+ * - Understanding which operations use which mechanism is critical for
+ *   performance tuning and avoiding bottlenecks
  */
