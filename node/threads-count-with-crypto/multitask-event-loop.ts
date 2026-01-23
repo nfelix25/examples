@@ -112,7 +112,7 @@ doHash();
  *    - Result: file read is delayed from ~55ms to ~780ms (waiting for thread availability)
  *    - Call order doesn't determine execution order when thread pool is saturated
  *
- * 5. HTTPS COMPLETES FIRST REGARDLESS:
+ * 5. HTTPS COMPLETES FIRST WHEN THREAD POOL IS SATURATED:
  *    - Network I/O is completely independent of the thread pool
  *    - The HTTPS request uses kernel-level async I/O (no threads needed)
  *    - It completes based on network latency, unaffected by CPU workload
