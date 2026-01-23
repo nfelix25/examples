@@ -135,7 +135,7 @@ doHash();
  * - Understanding which operations use which mechanism is critical for
  *   performance tuning and avoiding bottlenecks
  *
- * Bonus - Output with process.env.UV_THREADPOOL_SIZE = '5':
+ * BONUS - Output with process.env.UV_THREADPOOL_SIZE = '5':
  *
  * [0ms] Script start
  * [77ms] FILE READ: fs.readFile completed (poll phase)
