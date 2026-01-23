@@ -39,10 +39,10 @@ function doFileRead() {
 
 doRequestCallback();
 doFileRead();
-// doHash();
-// doHash();
-// doHash();
-// doHash();
+doHash();
+doHash();
+doHash();
+doHash();
 
 /**
 
