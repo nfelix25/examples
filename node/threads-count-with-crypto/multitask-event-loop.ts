@@ -2,6 +2,8 @@ import https from 'node:https';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
+// process.env.UV_THREADPOOL_SIZE = '5';
+
 const __filename = fs.realpathSync(process.argv[1]);
 
 const log = (msg: string) => console.log(`[${Date.now() - start}ms] ${msg}`);
@@ -132,4 +134,18 @@ doHash();
  * - Network I/O performance is isolated from thread pool congestion
  * - Understanding which operations use which mechanism is critical for
  *   performance tuning and avoiding bottlenecks
+ *
+ * Bonus - Output with process.env.UV_THREADPOOL_SIZE = '5':
+ *
+ * [0ms] Script start
+ * [77ms] FILE READ: fs.readFile completed (poll phase)
+ * [192ms] CALLBACK: Response received (poll phase)
+ * [227ms] CALLBACK: Response ended (poll phase)
+ * [747ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [748ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [750ms] HASH: pbkdf2 completed (libuv thread pool)
+ * [756ms] HASH: pbkdf2 completed (libuv thread pool)
+ *
+ * Increased thread pool size to 5 allows all operations to run concurrently,
+ * eliminating file read delay. File read completes at ~50-75ms as expected.
  */
