@@ -99,11 +99,16 @@ doHash();
  *    - Each hash takes ~750-800ms to complete
  *    - With default 4 threads: first 4 hashes run in parallel
  *
- * 4. THREAD POOL CONTENTION:
+ * 4. THREAD POOL CONTENTION - WHY FILE READ QUEUES DESPITE BEING CALLED FIRST:
  *    - With 4 hashes + 1 file read = 5 operations competing for 4 threads
- *    - The file read gets queued because all 4 threads are busy with hashing
- *    - File read only starts after one of the hash operations completes
+ *    - Even though doFileRead() is called before doHash(), all operations are
+ *      submitted to the thread pool synchronously in the same tick
+ *    - The thread pool doesn't guarantee FIFO (first-in-first-out) ordering
+ *    - When 5 operations arrive "simultaneously", the pool picks 4 to run immediately
+ *    - The 5th operation (often the file read) gets queued in the thread pool's work queue
+ *    - The file read only starts after one of the hash operations completes
  *    - Result: file read is delayed from ~55ms to ~780ms (waiting for thread availability)
+ *    - Call order doesn't determine execution order when thread pool is saturated
  *
  * 5. HTTPS COMPLETES FIRST REGARDLESS:
  *    - Network I/O is completely independent of the thread pool
