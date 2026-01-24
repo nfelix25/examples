@@ -13,12 +13,13 @@ app.get('/', async (req, res) => {
       {
         role: 'user',
         content:
-          'Tell me a short, funny joke about JavaScript. Only return the joke itself, no extra text or explanation.',
+          'Tell me a funny joke about web development. Only return the joke itself, no extra text or explanation.',
       },
     ],
     options: {
       num_ctx: 2048, // Smaller context window for faster inference
-      num_predict: 256, // Limit the response length
+      num_predict: 512, // Limit the response length
+      temperature: 0.6, // Add some randomness for humor
     },
   });
   res.send(joke.message.content);
@@ -29,10 +30,19 @@ app.listen(PORT, async () => {
 
   // Preload the model into memory
   console.log('Preloading model...');
-  await ollama.chat({
+  const year3000BCHistoricalFact = await ollama.chat({
     model: MODEL,
-    messages: [{ role: 'user', content: 'Hi' }],
-    options: { num_predict: 1 },
+    messages: [
+      {
+        role: 'user',
+        content:
+          'What is a historical fact about the year 3000 BC? Return only the fact itself.',
+      },
+    ],
+    options: {
+      num_ctx: 2048, // Smaller context window for faster inference
+      num_predict: 256, // Limit the response length
+    },
   });
-  console.log('Model loaded and ready!');
+  console.log(year3000BCHistoricalFact.message.content);
 });
