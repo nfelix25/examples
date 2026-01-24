@@ -4,7 +4,7 @@ import ollama from 'ollama';
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const MODEL = 'gemma2:2b-instruct-q2_K';
+const MODEL = 'llama3.2:1b';
 
 app.get('/', async (req, res) => {
   const joke = await ollama.chat({
