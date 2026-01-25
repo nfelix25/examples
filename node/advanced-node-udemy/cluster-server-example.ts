@@ -3,6 +3,13 @@ import ollama from 'ollama';
 import cluster from 'node:cluster';
 import os from 'node:os';
 
+function doWork(durationMs: number) {
+  const end = Date.now() + durationMs;
+  while (Date.now() < end) {
+    // Busy-wait to simulate CPU work
+  }
+}
+
 if (cluster.isPrimary) {
   const numCPUs = os.cpus().length;
   console.log(`Primary ${process.pid} is running`);
@@ -19,8 +26,9 @@ if (cluster.isPrimary) {
   const PORT = process.env.PORT || 3000;
   const MODEL = 'llama3.2:1b';
 
-  app.get('/', async (req, res) => {
+  app.get('/joke', async (req, res) => {
     console.log(`Handling request on worker ${process.pid}`);
+    doWork(2000); // Simulate CPU-bound work for 2 seconds, without workers this would block other requests
     const joke = await ollama.chat({
       model: MODEL,
       messages: [
@@ -37,6 +45,13 @@ if (cluster.isPrimary) {
       },
     });
     res.send(joke.message.content);
+  });
+
+  app.get('/', async (req, res) => {
+    console.log(`Handling request on worker ${process.pid}`);
+    res.send(
+      'Hello from the cluster server! Visit /joke for a web development joke.',
+    );
   });
 
   app.listen(PORT, async () => {
