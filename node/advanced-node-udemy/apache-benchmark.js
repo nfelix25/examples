@@ -1,0 +1,37 @@
+// Use Node to run server js then use apache benchmark to test
+
+import { exec } from 'node:child_process';
+
+const command = 'node cluster-server-example.ts'; // Command to run
+
+exec(command, (error, stdout, stderr) => {
+  if (error) {
+    console.error(`exec error: ${error}`);
+    return;
+  }
+  if (stderr) {
+    console.error(`stderr: ${stderr}`);
+  }
+  console.log(`stdout: ${stdout}`);
+});
+
+// Then in another terminal, run the following command to benchmark:
+// ab -n 100 -c 10 http://localhost:3000/joke
+// This will send 100 requests with a concurrency level of 10 to the /joke endpoint.
+
+// Adjust the -n and -c parameters as needed for your testing.
+
+const benchmarkCommand = 'ab -n 100 -c 10 http://localhost:3000/joke';
+
+setTimeout(() => {
+  exec(benchmarkCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Benchmark exec error: ${error}`);
+      return;
+    }
+    if (stderr) {
+      console.error(`Benchmark stderr: ${stderr}`);
+    }
+    console.log(`Benchmark stdout:\n${stdout}`);
+  });
+}, 5000); // Delay to allow server to start

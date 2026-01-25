@@ -11,11 +11,11 @@ function doWork(durationMs: number) {
 }
 
 if (cluster.isPrimary) {
-  const numCPUs = os.cpus().length;
+  const numForks = 10; // os.cpus().length;
   console.log(`Primary ${process.pid} is running`);
-  console.log(`Forking for ${numCPUs} CPUs`);
+  console.log(`Forking for ${numForks} CPUs`);
 
-  for (let i = 0; i < numCPUs; i++) {
+  for (let i = 0; i < numForks; i++) {
     cluster.fork();
   }
 } else {
@@ -28,7 +28,7 @@ if (cluster.isPrimary) {
 
   app.get('/joke', async (req, res) => {
     console.log(`Handling request on worker ${process.pid}`);
-    doWork(2000); // Simulate CPU-bound work for 2 seconds, without workers this would block other requests
+    // doWork(2000); // Simulate CPU-bound work for 2 seconds, without workers this would block other requests
     const joke = await ollama.chat({
       model: MODEL,
       messages: [
