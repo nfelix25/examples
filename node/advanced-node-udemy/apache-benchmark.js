@@ -2,7 +2,7 @@
 
 import { exec } from 'node:child_process';
 
-const command = 'node cluster-server-example.ts'; // Command to run
+const command = 'node cluster-example-crypto.ts'; // Command to run
 
 exec(command, (error, stdout, stderr) => {
   if (error) {
@@ -16,12 +16,12 @@ exec(command, (error, stdout, stderr) => {
 });
 
 // Then in another terminal, run the following command to benchmark:
-// ab -n 100 -c 10 http://localhost:3000/joke
-// This will send 100 requests with a concurrency level of 10 to the /joke endpoint.
+// ab -n 100 -c 10 http://localhost:3000/work
+// This will send 100 requests with a concurrency level of 10 to the /work endpoint.
 
 // Adjust the -n and -c parameters as needed for your testing.
 
-const benchmarkCommand = 'ab -n 100 -c 10 http://localhost:3000/joke';
+const benchmarkCommand = 'ab -n 1 -c 1 http://localhost:3000/work';
 
 setTimeout(() => {
   exec(benchmarkCommand, (error, stdout, stderr) => {
@@ -34,4 +34,4 @@ setTimeout(() => {
     }
     console.log(`Benchmark stdout:\n${stdout}`);
   });
-}, 5000); // Delay to allow server to start
+}, 1000); // Delay to allow server to start

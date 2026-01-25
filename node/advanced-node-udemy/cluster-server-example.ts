@@ -11,7 +11,7 @@ function doWork(durationMs: number) {
 }
 
 if (cluster.isPrimary) {
-  const numForks = 10; // os.cpus().length;
+  const numForks = 2; // os.cpus().length;
   console.log(`Primary ${process.pid} is running`);
   console.log(`Forking for ${numForks} CPUs`);
 
