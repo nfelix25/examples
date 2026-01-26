@@ -1,6 +1,7 @@
 // Use Node to run server js then use apache benchmark to test
 
 import { exec } from 'node:child_process';
+import os from 'node:os';
 
 const command = 'node cluster-example-crypto.ts'; // Command to run
 
@@ -21,7 +22,7 @@ exec(command, (error, stdout, stderr) => {
 
 // Adjust the -n and -c parameters as needed for your testing.
 
-const [c, n] = [4, 4]; // concurrency and number of requests
+const [c, n] = [os.cpus().length, os.cpus().length]; // concurrency and number of requests
 
 const benchmarkCommand = `ab -n ${n} -c ${c} http://localhost:3000/work`;
 
