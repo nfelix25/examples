@@ -21,7 +21,9 @@ exec(command, (error, stdout, stderr) => {
 
 // Adjust the -n and -c parameters as needed for your testing.
 
-const benchmarkCommand = 'ab -n 1 -c 1 http://localhost:3000/work';
+const [c, n] = [1, 1]; // concurrency and number of requests
+
+const benchmarkCommand = `ab -n ${n} -c ${c} http://localhost:3000/work`;
 
 setTimeout(() => {
   exec(benchmarkCommand, (error, stdout, stderr) => {
