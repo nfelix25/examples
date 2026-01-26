@@ -3,7 +3,9 @@
 import { exec } from 'node:child_process';
 import os from 'node:os';
 
-const command = 'node cluster-example-crypto.ts'; // Command to run
+const NUM_CORES = os.cpus().length / 2; // Adjust number of cores to use physical cores
+
+const command = `NUM_CORES=${NUM_CORES} node cluster-example-crypto.ts`; // Command to run
 
 exec(command, (error, stdout, stderr) => {
   if (error) {
@@ -22,7 +24,7 @@ exec(command, (error, stdout, stderr) => {
 
 // Adjust the -n and -c parameters as needed for your testing.
 
-const [c, n] = [os.cpus().length, os.cpus().length * 2]; // concurrency and number of requests
+const [c, n] = [NUM_CORES, NUM_CORES]; // concurrency and number of requests
 
 // This is with os.cpus().length instances of cluster.fork();
 
@@ -57,7 +59,7 @@ Percentage of the requests served within a certain time (ms)
  100%   1656 (longest request)
 */
 
-// const [c, n] = [os.cpus().length * 2, os.cpus().length * 2];
+// const [c, n] = [NUM_CORES * 2, NUM_CORES * 2];
 
 /*
 

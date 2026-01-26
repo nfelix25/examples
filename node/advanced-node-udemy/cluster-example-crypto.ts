@@ -6,7 +6,8 @@ import { pbkdf2 } from 'node:crypto';
 process.env.UV_THREADPOOL_SIZE = '1';
 
 if (cluster.isPrimary) {
-  const numForks = os.cpus().length;
+  const numForks =
+    process.env.NUM_CORES ? parseInt(process.env.NUM_CORES) : os.cpus().length;
   console.log(`Primary ${process.pid} is running`);
   console.log(`Forking for ${numForks} CPUs`);
 
