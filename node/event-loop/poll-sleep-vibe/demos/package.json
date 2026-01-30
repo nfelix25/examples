@@ -1,0 +1,13 @@
+{
+  "name": "poll-sleep-demos",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Node event loop poll sleep demos",
+  "type": "commonjs",
+  "scripts": {
+    "idle": "node idle-sleep.js",
+    "spin": "node setimmediate-spin.js",
+    "micro": "node microtask-starvation.js",
+    "storm": "node wakeup-storm.js"
+  }
+}

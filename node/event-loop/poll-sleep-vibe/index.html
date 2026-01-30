@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>I Have No Eyes and I Must Sleep</title>
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --bg-2: #efe6da;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --accent: #0b6b57;
+      --accent-2: #d6722f;
+      --panel: #ffffff;
+      --code: #141414;
+      --code-ink: #f0f0f0;
+      --border: #d8cdbf;
+      --shadow: rgba(0,0,0,0.08);
+      --good: #2f8f4e;
+      --bad: #b3261e;
+      --warn: #b45309;
+    }
+
+    body.dark {
+      --bg: #141412;
+      --bg-2: #1b1a16;
+      --ink: #f0e9dd;
+      --muted: #c9c0b2;
+      --accent: #66d19e;
+      --accent-2: #f4a259;
+      --panel: #1d1b16;
+      --code: #0e0e0e;
+      --code-ink: #e9e2d6;
+      --border: #3a352c;
+      --shadow: rgba(0,0,0,0.35);
+      --good: #8be28f;
+      --bad: #ff8a80;
+      --warn: #ffd166;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, var(--bg-2), transparent 60%),
+        radial-gradient(800px 400px at 90% 0%, #ead9c6, transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    header.hero {
+      padding: 64px 24px 40px;
+      text-align: center;
+    }
+
+    .hero-inner {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Georgia", serif;
+      font-size: clamp(2.3rem, 4vw, 4rem);
+      margin: 0 0 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      font-size: clamp(1.1rem, 2.3vw, 1.6rem);
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .hero-tools {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: 0 4px 14px var(--shadow);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .tiny-note {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .layout {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    section {
+      background: var(--panel);
+      padding: 28px;
+      margin: 20px 0;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Georgia", serif;
+    }
+
+    h3 {
+      margin-bottom: 6px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(11,107,87,0.1);
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .diagram {
+      display: flex;
+      justify-content: center;
+      margin: 16px 0 4px;
+    }
+
+    .codebox {
+      background: var(--code);
+      color: var(--code-ink);
+      border-radius: 12px;
+      padding: 14px 14px 10px;
+      position: relative;
+      overflow: auto;
+    }
+
+    .codebox code {
+      font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.12);
+      color: var(--code-ink);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .run-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--ink);
+      padding: 6px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent-2);
+      padding: 10px 14px;
+      background: rgba(214,114,47,0.08);
+      border-radius: 12px;
+      margin: 10px 0;
+    }
+
+    .sim {
+      border: 1px dashed var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+    }
+
+    .sim-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .run-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .sim-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      padding: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .tag { font-weight: 700; }
+
+    details {
+      background: rgba(0,0,0,0.03);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0;
+    }
+
+    details > summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .demo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .demo-header h3 { margin: 0; }
+
+    .observe {
+      background: rgba(47,143,78,0.1);
+      border-left: 4px solid var(--good);
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+
+    .catch {
+      background: rgba(179,38,30,0.08);
+      border-left: 4px solid var(--bad);
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+
+    .fix {
+      background: rgba(180,83,9,0.08);
+      border-left: 4px solid var(--warn);
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px 0 40px;
+      color: var(--muted);
+    }
+
+    .ascii {
+      font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+      background: rgba(0,0,0,0.04);
+      padding: 12px;
+      border-radius: 10px;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+
+    .poll-highlight {
+      animation: pulse 1.2s infinite;
+    }
+
+    @media (max-width: 700px) {
+      header.hero { padding-top: 40px; }
+      section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="pill">Node event loop</div>
+      <h1>I Have No Eyes and I Must Sleep</h1>
+      <div class="subtitle">Why your "idle" Node process is actually doing burpees.</div>
+      <div class="hero-tools">
+        <button class="btn" id="toggle-theme">Toggle dark mode</button>
+        <button class="btn" id="jump-demos">Jump to demos</button>
+      </div>
+      <p class="tiny-note">Core message: the poll phase is designed to wait. If a Node process burns a full core while "idle," your app is preventing poll from blocking.</p>
+      <div class="diagram">
+        <svg width="420" height="110" viewBox="0 0 420 110" role="img" aria-label="Event loop phases">
+          <rect x="10" y="20" width="80" height="70" rx="12" fill="#ead9c6" stroke="#c7b29e" />
+          <rect x="100" y="20" width="80" height="70" rx="12" fill="#ead9c6" stroke="#c7b29e" />
+          <rect x="190" y="20" width="80" height="70" rx="12" fill="#ead9c6" stroke="#c7b29e" class="poll-highlight" />
+          <rect x="280" y="20" width="80" height="70" rx="12" fill="#ead9c6" stroke="#c7b29e" />
+          <text x="50" y="62" text-anchor="middle" font-size="14">timers</text>
+          <text x="140" y="62" text-anchor="middle" font-size="14">pending</text>
+          <text x="230" y="62" text-anchor="middle" font-size="14">poll</text>
+          <text x="320" y="62" text-anchor="middle" font-size="14">check</text>
+          <path d="M370 55 L400 55" stroke="#444" stroke-width="2" marker-end="url(#arrow)" />
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#444" />
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section>
+      <h2>Poll is where Node sleeps</h2>
+      <p>Node runs your JavaScript on one main thread. It delegates I/O waiting to <strong>libuv</strong>, which uses the OS to block in <strong>epoll_wait</strong> (Linux), <strong>kqueue</strong> (macOS/BSD), or <strong>IOCP</strong> (Windows). That waiting happens in the <strong>poll phase</strong>. In a healthy idle process, poll <em>blocks</em> and the CPU sleeps.</p>
+      <p>If you schedule immediate work (like <code>setImmediate</code> or a tight microtask loop), the poll phase gets a timeout of 0. That means it returns immediately, the loop spins, and you burn a core while doing almost no useful work.</p>
+      <div class="callout"><strong>Vocabulary:</strong> <em>blocking</em> means the thread is asleep in the kernel, waiting for I/O; <em>poll phase</em> is where libuv waits; <em>wakeup storm</em> is a loop of fast wakeups because a file descriptor stays "ready"; <em>microtasks</em> are Promise/nextTick callbacks run before the loop can advance; <em>starvation</em> is when those microtasks keep the loop from reaching timers or I/O.</div>
+      <details>
+        <summary>Deep dive: why poll blocks (conceptually)</summary>
+        <p>libuv computes the next timer deadline and asks the kernel to block until either I/O becomes ready or the timeout expires. If there is immediate work (like setImmediate callbacks), it sets the timeout to 0, which tells the kernel to return immediately. That is the root of many "idle but hot" Node processes.</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>Event Loop Simulator (conceptual model)</h2>
+      <p><span class="pill">Conceptual model</span> This is a friendly mental model, not a perfect clone of Node internals. It illustrates how poll sleep time collapses when you keep scheduling immediate work.</p>
+      <div class="sim">
+        <div class="sim-controls">
+          <label><input type="radio" name="scenario" value="idle" checked /> Idle</label>
+          <label><input type="radio" name="scenario" value="immediate" /> Immediate Spin</label>
+          <label><input type="radio" name="scenario" value="microtasks" /> Microtask Starvation</label>
+          <label><input type="radio" name="scenario" value="storm" /> Wakeup Storm</label>
+          <button class="btn" id="sim-reset">Reset</button>
+        </div>
+        <canvas id="sim-canvas" width="880" height="120" style="width: 100%; height: 120px; border-radius: 8px; background: rgba(255,255,255,0.8);"></canvas>
+        <div class="sim-stats">
+          <div class="stat"><div class="tag">ticks/sec</div><div id="stat-tps">0</div></div>
+          <div class="stat"><div class="tag">scheduled immediates</div><div id="stat-immediates">0</div></div>
+          <div class="stat"><div class="tag">microtasks processed</div><div id="stat-microtasks">0</div></div>
+          <div class="stat"><div class="tag">poll slept (ms)</div><div id="stat-sleep">0</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demos">
+      <h2>Four demos: sleep, spin, starve, storm</h2>
+      <p>Each demo is a self-contained Node script. Run them locally on Linux for the best observability. macOS has <code>dtruss</code> and <code>ktrace</code> instead of <code>strace</code>, and Windows uses ETW or Windows Performance Recorder. The concepts still apply, but the commands below are Linux-first.</p>
+      <div class="callout"><strong>Safety:</strong> Do not run <code>strace</code> or <code>perf</code> in production without permission. These tools can be invasive and may reveal sensitive data.</div>
+    </section>
+
+    <section>
+      <div class="demo-header">
+        <h3>Demo 1: True idle sleep (poll blocks)</h3>
+        <span class="pill">demo: idle-sleep.js</span>
+      </div>
+      <p><strong>Summary:</strong> A TCP server with no activity. The process stays alive but the poll phase blocks in <code>epoll_wait</code>. CPU should remain near zero.</p>
+      <h4>Run it</h4>
+      <div class="run-controls">
+        <button class="run-btn" data-copy-target="#cmd-idle">Run demo in terminal</button>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#cmd-idle">Copy</button>
+        <code id="cmd-idle">node demos/idle-sleep.js</code>
+      </div>
+      <h4>File: demos/idle-sleep.js</h4>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#code-idle">Copy</button>
+        <code id="code-idle">const net = require('net');
+
+const server = net.createServer((socket) =&gt; {
+  socket.end('hello\n');
+});
+
+server.listen(3333, '127.0.0.1', () =&gt; {
+  console.log('idle-sleep: listening on 127.0.0.1:3333');
+  console.log('pid:', process.pid);
+  console.log('Try: nc 127.0.0.1 3333');
+});</code>
+      </div>
+      <div class="observe">
+        <strong>What you should observe:</strong>
+        <ul>
+          <li>CPU stays near 0% while idle.</li>
+          <li><code>epoll_wait</code> blocks for long durations.</li>
+          <li>Connecting with <code>nc</code> wakes the loop briefly.</li>
+        </ul>
+      </div>
+      <div class="catch">
+        <strong>How to detect this:</strong>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#ps-idle">Copy</button>
+          <code id="ps-idle">ps -eo pid,comm,args,%cpu --sort=-%cpu | head</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#strace-idle">Copy</button>
+          <code id="strace-idle">sudo strace -tt -p PID -e trace=epoll_wait,ppoll,poll,select,nanosleep,clock_nanosleep</code>
+        </div>
+        <p>Expected pattern: <code>epoll_wait</code> blocks and returns infrequently.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-top">Copy</button>
+          <code id="perf-top">sudo perf top -p PID</code>
+        </div>
+        <p>Expected pattern: low overall samples, occasional <code>epoll_wait</code> or <code>uv__io_poll</code>.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-rec-idle">Copy</button>
+          <code id="perf-rec-idle">sudo perf record -F 99 -p PID --call-graph dwarf -- sleep 10</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-report-idle">Copy</button>
+          <code id="perf-report-idle">sudo perf report</code>
+        </div>
+        <details>
+          <summary>Node profiling options</summary>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#cpu-prof">Copy</button>
+            <code id="cpu-prof">node --cpu-prof demos/idle-sleep.js</code>
+          </div>
+          <p><code>--cpu-prof</code> writes a <code>.cpuprofile</code> file you can open in Chrome DevTools (Performance tab). For the idle case, the profile should be mostly empty.</p>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof">Copy</button>
+            <code id="prof">node --prof demos/idle-sleep.js</code>
+          </div>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-process-idle">Copy</button>
+            <code id="prof-process-idle">node --prof-process v8.log</code>
+          </div>
+          <p><code>--prof</code> writes <code>v8.log</code>. Process it with <code>node --prof-process v8.log</code> to see where time was spent.</p>
+        </details>
+      </div>
+      <div class="fix">
+        <strong>Fix patterns:</strong>
+        <ul>
+          <li>None needed. This is the healthy baseline: poll sleeps.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="demo-header">
+        <h3>Demo 2: setImmediate spin</h3>
+        <span class="pill">demo: setimmediate-spin.js</span>
+      </div>
+      <p><strong>Summary:</strong> A recursive <code>setImmediate</code> loop. Poll always has immediate work, so it never blocks. One core pegs at 100%.</p>
+      <h4>Run it</h4>
+      <div class="run-controls">
+        <button class="run-btn" data-copy-target="#cmd-spin">Run demo in terminal</button>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#cmd-spin">Copy</button>
+        <code id="cmd-spin">node demos/setimmediate-spin.js</code>
+      </div>
+      <h4>File: demos/setimmediate-spin.js</h4>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#code-spin">Copy</button>
+        <code id="code-spin">let iterations = 0;
+const started = Date.now();
+
+function spin() {
+  iterations++;
+  setImmediate(spin);
+}
+
+spin();
+
+setInterval(() =&gt; {
+  const elapsed = (Date.now() - started) / 1000;
+  const perSec = Math.round(iterations / elapsed);
+  console.log('setImmediate spin:', perSec, 'iterations/sec');
+}, 1000);</code>
+      </div>
+      <div class="observe">
+        <strong>What you should observe:</strong>
+        <ul>
+          <li>CPU ~100% of one core.</li>
+          <li>Very high iterations/sec.</li>
+          <li>Almost no time spent sleeping in poll.</li>
+        </ul>
+      </div>
+      <div class="catch">
+        <strong>How to detect this:</strong>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#ps-spin">Copy</button>
+          <code id="ps-spin">ps -eo pid,comm,args,%cpu --sort=-%cpu | head</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#strace-spin">Copy</button>
+          <code id="strace-spin">sudo strace -tt -p PID -e trace=epoll_wait,ppoll,poll,select,nanosleep,clock_nanosleep</code>
+        </div>
+        <p>Expected pattern: rapid <code>epoll_wait</code> calls returning immediately (timeout 0). This is a classic spin.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-spin">Copy</button>
+          <code id="perf-spin">sudo perf top -p PID</code>
+        </div>
+        <p>Expected pattern: lots of userland JS/V8 frames; little kernel blocking.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-rec-spin">Copy</button>
+          <code id="perf-rec-spin">sudo perf record -F 99 -p PID --call-graph dwarf -- sleep 10</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-report-spin">Copy</button>
+          <code id="perf-report-spin">sudo perf report</code>
+        </div>
+        <details>
+          <summary>Node profiling options</summary>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#cpu-prof-spin">Copy</button>
+            <code id="cpu-prof-spin">node --cpu-prof demos/setimmediate-spin.js</code>
+          </div>
+          <p>Open the <code>.cpuprofile</code> in Chrome DevTools. You should see heavy time in JS and V8 internals.</p>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-spin">Copy</button>
+            <code id="prof-spin">node --prof demos/setimmediate-spin.js</code>
+          </div>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-process-spin">Copy</button>
+            <code id="prof-process-spin">node --prof-process v8.log</code>
+          </div>
+          <p>Process <code>v8.log</code> with <code>node --prof-process v8.log</code> to get a summary.</p>
+        </details>
+      </div>
+      <div class="fix">
+        <strong>Fix patterns:</strong>
+        <ul>
+          <li>Batch work and yield with timers when possible.</li>
+          <li>Use <code>setImmediate</code> sparingly; avoid infinite immediate loops.</li>
+          <li>Prefer event-driven I/O or backpressure rather than scheduled spin.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="demo-header">
+        <h3>Demo 3: Microtask starvation</h3>
+        <span class="pill">demo: microtask-starvation.js</span>
+      </div>
+      <p><strong>Summary:</strong> A never-ending microtask chain (Promise or <code>process.nextTick</code>) prevents the loop from reaching timers or I/O. The poll phase rarely gets a chance to block.</p>
+      <h4>Run it</h4>
+      <div class="run-controls">
+        <button class="run-btn" data-copy-target="#cmd-micro">Run demo in terminal (promise)</button>
+        <button class="run-btn" data-copy-target="#cmd-micro-nt">Run demo in terminal (nextTick)</button>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#cmd-micro">Copy</button>
+        <code id="cmd-micro">MODE=promise node demos/microtask-starvation.js</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#cmd-micro-nt">Copy</button>
+        <code id="cmd-micro-nt">MODE=nextTick node demos/microtask-starvation.js</code>
+      </div>
+      <h4>File: demos/microtask-starvation.js</h4>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#code-micro">Copy</button>
+        <code id="code-micro">const mode = process.env.MODE || 'promise';
+const yieldEvery = Number(process.env.YIELD_EVERY || 0);
+
+let iterations = 0;
+const started = Date.now();
+let timerFires = 0;
+let lastTimer = Date.now();
+
+setInterval(() =&gt; {
+  const now = Date.now();
+  const drift = now - lastTimer - 1000;
+  lastTimer = now;
+  timerFires++;
+  console.log('timer fired', timerFires, 'drift(ms)=', drift);
+}, 1000);
+
+function schedule() {
+  iterations++;
+  if (iterations % 5_000_000 === 0) {
+    const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+    console.log('microtasks:', iterations, 'elapsed(s)=', elapsed);
+  }
+  if (yieldEvery &gt; 0 &amp;&amp; iterations % yieldEvery === 0) {
+    setImmediate(schedule);
+    return;
+  }
+  if (mode === 'nextTick') {
+    process.nextTick(schedule);
+  } else {
+    Promise.resolve().then(schedule);
+  }
+}
+
+console.log('mode:', mode, 'yieldEvery:', yieldEvery || 'none');
+console.log('pid:', process.pid);
+console.log('Try: YIELD_EVERY=100000 MODE=promise node demos/microtask-starvation.js');
+
+schedule();</code>
+      </div>
+      <div class="observe">
+        <strong>What you should observe:</strong>
+        <ul>
+          <li>CPU high even though no useful work is done.</li>
+          <li>Timers are delayed or never fire (starvation).</li>
+          <li><code>nextTick</code> is usually more aggressive than Promise microtasks.</li>
+        </ul>
+      </div>
+      <div class="catch">
+        <strong>How to detect this:</strong>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#ps-micro">Copy</button>
+          <code id="ps-micro">ps -eo pid,comm,args,%cpu --sort=-%cpu | head</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#strace-micro">Copy</button>
+          <code id="strace-micro">sudo strace -tt -p PID -e trace=epoll_wait,ppoll,poll,select,nanosleep,clock_nanosleep</code>
+        </div>
+        <p>Expected pattern: fewer <code>epoll_wait</code> calls; the process burns CPU in userland.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-micro">Copy</button>
+          <code id="perf-micro">sudo perf top -p PID</code>
+        </div>
+        <p>Expected pattern: heavy JS/V8 time, little kernel wait.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-rec-micro">Copy</button>
+          <code id="perf-rec-micro">sudo perf record -F 99 -p PID --call-graph dwarf -- sleep 10</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-report-micro">Copy</button>
+          <code id="perf-report-micro">sudo perf report</code>
+        </div>
+        <details>
+          <summary>Node profiling options</summary>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#cpu-prof-micro">Copy</button>
+            <code id="cpu-prof-micro">node --cpu-prof demos/microtask-starvation.js</code>
+          </div>
+          <p>Expect hot stacks dominated by Promise/nextTick processing.</p>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-micro">Copy</button>
+            <code id="prof-micro">node --prof demos/microtask-starvation.js</code>
+          </div>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-process-micro">Copy</button>
+            <code id="prof-process-micro">node --prof-process v8.log</code>
+          </div>
+        </details>
+      </div>
+      <div class="fix">
+        <strong>Fix patterns:</strong>
+        <ul>
+          <li>Avoid unbounded microtask chains; insert a yield (timer or immediate) after N iterations.</li>
+          <li>Prefer Promise chains that naturally resolve, not self-scheduling microtasks.</li>
+          <li>Move heavy loops to worker threads when possible.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="demo-header">
+        <h3>Demo 4: Wakeup storm</h3>
+        <span class="pill">demo: wakeup-storm.js</span>
+      </div>
+      <p><strong>Summary:</strong> A local client sends tiny chunks continuously. The server socket is always readable, so <code>epoll_wait</code> returns immediately over and over. This creates a wakeup storm.</p>
+      <h4>Run it</h4>
+      <div class="run-controls">
+        <button class="run-btn" data-copy-target="#cmd-storm">Run demo in terminal</button>
+        <button class="run-btn" data-copy-target="#cmd-storm-fix">Run demo in terminal (fixed)</button>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#cmd-storm">Copy</button>
+        <code id="cmd-storm">node demos/wakeup-storm.js</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#cmd-storm-fix">Copy</button>
+        <code id="cmd-storm-fix">FIX=1 node demos/wakeup-storm.js</code>
+      </div>
+      <h4>File: demos/wakeup-storm.js</h4>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#code-storm">Copy</button>
+        <code id="code-storm">const net = require('net');
+
+const forever = process.argv.includes('--forever');
+const fix = process.env.FIX === '1';
+const durationMs = 10_000;
+
+let bytes = 0;
+let events = 0;
+let start = Date.now();
+
+const server = net.createServer((socket) =&gt; {
+  socket.on('data', (chunk) =&gt; {
+    bytes += chunk.length;
+    events++;
+    if (fix) {
+      socket.pause();
+      setTimeout(() =&gt; socket.resume(), 10);
+    }
+  });
+});
+
+server.listen(0, '127.0.0.1', () =&gt; {
+  const port = server.address().port;
+  console.log('wakeup-storm server on port', port, 'fix:', fix);
+  console.log('pid:', process.pid);
+  startClient(port);
+});
+
+function startClient(port) {
+  const client = net.connect(port, '127.0.0.1');
+  client.setNoDelay(true);
+  const payload = Buffer.alloc(512, 0x61);
+
+  function writeLoop() {
+    let ok = true;
+    while (ok) {
+      ok = client.write(payload);
+    }
+    if (!ok) {
+      client.once('drain', writeLoop);
+    }
+  }
+
+  client.on('connect', () =&gt; {
+    writeLoop();
+  });
+}
+
+setInterval(() =&gt; {
+  const now = Date.now();
+  const sec = (now - start) / 1000;
+  const eps = Math.round(events / sec);
+  const bps = Math.round(bytes / sec);
+  console.log('events/sec', eps, 'bytes/sec', bps);
+  if (!forever &amp;&amp; now - start &gt; durationMs) {
+    console.log('stopping after', durationMs / 1000, 'seconds');
+    process.exit(0);
+  }
+}, 1000);</code>
+      </div>
+      <div class="observe">
+        <strong>What you should observe:</strong>
+        <ul>
+          <li>CPU stays high due to constant readiness events.</li>
+          <li>High events/sec even though the handler does little work.</li>
+          <li>With <code>FIX=1</code>, events/sec drops and CPU improves.</li>
+        </ul>
+      </div>
+      <div class="catch">
+        <strong>How to detect this:</strong>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#ps-storm">Copy</button>
+          <code id="ps-storm">ps -eo pid,comm,args,%cpu --sort=-%cpu | head</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#strace-storm">Copy</button>
+          <code id="strace-storm">sudo strace -tt -p PID -e trace=epoll_wait,ppoll,poll,select,nanosleep,clock_nanosleep</code>
+        </div>
+        <p>Expected pattern: rapid <code>epoll_wait</code> wakeups because the socket is always readable.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-storm">Copy</button>
+          <code id="perf-storm">sudo perf top -p PID</code>
+        </div>
+        <p>Expected pattern: <code>uv__io_poll</code> and JS callbacks show up frequently.</p>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-rec-storm">Copy</button>
+          <code id="perf-rec-storm">sudo perf record -F 99 -p PID --call-graph dwarf -- sleep 10</code>
+        </div>
+        <div class="codebox">
+          <button class="copy-btn" data-copy-target="#perf-report-storm">Copy</button>
+          <code id="perf-report-storm">sudo perf report</code>
+        </div>
+        <details>
+          <summary>Node profiling options</summary>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#cpu-prof-storm">Copy</button>
+            <code id="cpu-prof-storm">node --cpu-prof demos/wakeup-storm.js</code>
+          </div>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-storm">Copy</button>
+            <code id="prof-storm">node --prof demos/wakeup-storm.js</code>
+          </div>
+          <div class="codebox">
+            <button class="copy-btn" data-copy-target="#prof-process-storm">Copy</button>
+            <code id="prof-process-storm">node --prof-process v8.log</code>
+          </div>
+        </details>
+      </div>
+      <div class="fix">
+        <strong>Fix patterns:</strong>
+        <ul>
+          <li>Respect backpressure: pause reads and resume after processing batches.</li>
+          <li>Aggregate or batch small writes to reduce wakeups.</li>
+          <li>Use flow control on streams (pause/resume or highWaterMark tuning).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>How to catch the problem in the wild</h2>
+      <p>This is a quick workflow for Linux. Always get permission before tracing production workloads.</p>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#ps-top">Copy</button>
+        <code id="ps-top">ps -eo pid,comm,args,%cpu --sort=-%cpu | head</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#strace-all">Copy</button>
+        <code id="strace-all">sudo strace -tt -p PID -e trace=epoll_wait,ppoll,poll,select,nanosleep,clock_nanosleep</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#perf-rec">Copy</button>
+        <code id="perf-rec">sudo perf record -F 99 -p PID --call-graph dwarf -- sleep 10</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#perf-report">Copy</button>
+        <code id="perf-report">sudo perf report</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#node-prof">Copy</button>
+        <code id="node-prof">node --cpu-prof your-script.js</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#node-prof2">Copy</button>
+        <code id="node-prof2">node --prof your-script.js</code>
+      </div>
+      <div class="codebox">
+        <button class="copy-btn" data-copy-target="#node-prof-process">Copy</button>
+        <code id="node-prof-process">node --prof-process v8.log</code>
+      </div>
+      <p>Open <code>.cpuprofile</code> in Chrome DevTools (Performance tab). For <code>--prof</code>, run <code>node --prof-process v8.log</code> for a text summary. Tools like <code>0x</code> or <code>clinic flame</code> can help, but they are optional.</p>
+      <details>
+        <summary>Expected perf/strace patterns (likely, not guaranteed)</summary>
+        <ul>
+          <li><strong>Idle sleep:</strong> long <code>epoll_wait</code> blocks, few samples.</li>
+          <li><strong>Spin:</strong> <code>epoll_wait</code> returns immediately, high userland CPU.</li>
+          <li><strong>Microtask starvation:</strong> scarce poll syscalls, heavy JS/V8 time.</li>
+          <li><strong>Wakeup storm:</strong> frequent <code>epoll_wait</code> returns due to always-ready fd.</li>
+        </ul>
+        <p>Exact symbol names vary by Node version and build flags. Look for patterns, not perfect matches.</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>Expected flamegraph sketches (ASCII)</h2>
+      <div class="ascii">Idle (sleeping)
+| epoll_wait ....................... |
+
+Spin (setImmediate)
+| JS (setImmediate) | v8:: | JS | v8:: | JS | v8:: |
+
+Microtask starvation
+| JS microtasks | v8::Promise | JS microtasks | v8::nextTick |
+
+Wakeup storm
+| uv__io_poll | on('data') | uv__io_poll | on('data') | ... |
+</div>
+    </section>
+
+    <section>
+      <h2>Checklist: if you see 100% CPU while "idle"</h2>
+      <ul>
+        <li>Confirm the poll phase is not sleeping (strace shows epoll_wait returning immediately).</li>
+        <li>Look for self-scheduling immediates or microtask chains.</li>
+        <li>Check for always-ready sockets (wakeup storm), especially small writes.</li>
+        <li>Use Node CPU profiles to find hot JS stacks.</li>
+        <li>Remember: poll sleeping is good. Spinning is bad.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Conceptual caveats</h2>
+      <p>The event loop has more phases (timers, pending, idle/prepare, poll, check, close). The diagrams and simulator are a teaching aid. Internal details evolve across Node versions. The important invariant remains: <strong>poll is where the thread blocks</strong>. If your process is burning CPU while "idle," it is almost always because something keeps the poll phase from sleeping.</p>
+    </section>
+  </main>
+
+  <div class="footer">Built to run offline. No external libraries.</div>
+
+  <script>
+    const toggle = document.getElementById('toggle-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const saved = localStorage.getItem('theme');
+    if ((saved === 'dark') || (!saved && prefersDark)) {
+      document.body.classList.add('dark');
+    }
+    toggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    document.getElementById('jump-demos').addEventListener('click', () => {
+      document.getElementById('demos').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    document.querySelectorAll('.copy-btn, .run-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-copy-target');
+        const el = document.querySelector(target);
+        if (!el) return;
+        const text = el.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          const original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => btn.textContent = original, 1200);
+        });
+      });
+    });
+
+    const canvas = document.getElementById('sim-canvas');
+    const ctx = canvas.getContext('2d');
+    const statTps = document.getElementById('stat-tps');
+    const statIm = document.getElementById('stat-immediates');
+    const statMt = document.getElementById('stat-microtasks');
+    const statSleep = document.getElementById('stat-sleep');
+    const scenarioInputs = document.querySelectorAll('input[name="scenario"]');
+
+    let scenario = 'idle';
+    scenarioInputs.forEach(r => r.addEventListener('change', () => {
+      scenario = document.querySelector('input[name="scenario"]:checked').value;
+      resetSim();
+    }));
+
+    document.getElementById('sim-reset').addEventListener('click', resetSim);
+
+    let ticks = 0;
+    let immediates = 0;
+    let microtasks = 0;
+    let slept = 0;
+    let last = performance.now();
+    let lastTick = performance.now();
+    let timeline = [];
+
+    function resetSim() {
+      ticks = 0; immediates = 0; microtasks = 0; slept = 0;
+      timeline = [];
+      last = performance.now();
+      lastTick = performance.now();
+      draw();
+    }
+
+    function simStep() {
+      const now = performance.now();
+      const dt = now - last;
+      last = now;
+
+      let pollSleep = 0;
+      let addIm = 0;
+      let addMt = 0;
+      let tickRate = 60;
+
+      if (scenario === 'idle') {
+        pollSleep = 16;
+        tickRate = 10;
+      } else if (scenario === 'immediate') {
+        pollSleep = 0;
+        addIm = 200;
+        tickRate = 240;
+      } else if (scenario === 'microtasks') {
+        pollSleep = 1;
+        addMt = 500;
+        tickRate = 180;
+      } else if (scenario === 'storm') {
+        pollSleep = 0;
+        addIm = 20;
+        tickRate = 220;
+      }
+
+      const ticksThisFrame = Math.max(1, Math.round((dt / 1000) * tickRate));
+      ticks += ticksThisFrame;
+      immediates += addIm;
+      microtasks += addMt;
+      slept += pollSleep;
+
+      timeline.push({
+        t: now,
+        poll: pollSleep,
+        scenario
+      });
+
+      while (timeline.length > 80) timeline.shift();
+
+      if (now - lastTick > 1000) {
+        statTps.textContent = Math.round(ticksThisFrame * 60);
+        statIm.textContent = immediates;
+        statMt.textContent = microtasks;
+        statSleep.textContent = slept;
+        lastTick = now;
+      }
+
+      draw();
+      requestAnimationFrame(simStep);
+    }
+
+    function draw() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      ctx.fillRect(0, 0, w, h);
+
+      const barWidth = w / 80;
+      for (let i = 0; i < timeline.length; i++) {
+        const x = i * barWidth;
+        const item = timeline[i];
+        const sleep = Math.min(40, item.poll * 2);
+        ctx.fillStyle = item.poll > 0 ? '#2f8f4e' : '#b3261e';
+        ctx.fillRect(x, h - sleep, barWidth - 2, sleep);
+      }
+
+      ctx.fillStyle = '#333';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('green = poll slept, red = poll returned immediately', 10, 16);
+    }
+
+    resetSim();
+    requestAnimationFrame(simStep);
+  </script>
+</body>
+</html>

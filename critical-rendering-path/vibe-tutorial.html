@@ -1,0 +1,1653 @@
+<!doctype html>
+<html lang="en" data-scenario="">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hands-on Critical Rendering Path</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f8fafc;
+        --panel-bg: #0f172a;
+        --panel-text: #e2e8f0;
+        --accent: #2563eb;
+        --accent-soft: #dbeafe;
+        --border: #cbd5f5;
+        --muted: #64748b;
+        --card: #ffffff;
+        --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+        --mono: 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace;
+        font-size: 16px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          'Segoe UI',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        line-height: 1.6;
+        background: var(--bg);
+        color: #0f172a;
+      }
+      header.hero {
+        padding: 2rem clamp(1rem, 4vw, 4rem);
+        background: #fff;
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 0;
+        z-index: 3;
+      }
+      header.hero .eyebrow {
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin: 0 0 0.5rem;
+      }
+      header.hero h1 {
+        margin: 0.2rem 0 1rem;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.2;
+      }
+      #scenario-note {
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .hero-layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      #scenario-form {
+        display: grid;
+        gap: 0.4rem;
+        min-width: 220px;
+      }
+      #scenario-form select,
+      #scenario-form button {
+        padding: 0.4rem 0.6rem;
+        font-size: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        background: #eef2ff;
+        color: #0f172a;
+      }
+      #scenario-form button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 310px;
+        gap: 1.5rem;
+        padding: 2.5rem clamp(1rem, 4vw, 4rem);
+      }
+      article section {
+        margin-bottom: 3rem;
+        background: #fff;
+        padding: 1.6rem;
+        border-radius: 1rem;
+        box-shadow: var(--shadow);
+      }
+      section h2 {
+        margin-top: 0;
+      }
+      figure,
+      p,
+      ul {
+        margin-top: 0;
+      }
+      #pipeline svg {
+        width: 100%;
+        height: auto;
+      }
+      .diagram-node {
+        fill: #e0f2fe;
+        stroke: #0284c7;
+        stroke-width: 1.2;
+        rx: 12;
+      }
+      .diagram-arrow {
+        stroke: #475569;
+        stroke-width: 2;
+        marker-end: url(#arrowhead);
+      }
+      .toggle-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-bottom: 1rem;
+      }
+      .toggle-panel label {
+        background: var(--accent-soft);
+        padding: 0.4rem 0.8rem;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.9rem;
+      }
+      #resource-visual {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+      .resource {
+        background: #f1f5f9;
+        border-radius: 0.6rem;
+        padding: 0.6rem;
+      }
+      .resource-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .resource-bar {
+        height: 10px;
+        border-radius: 999px;
+        margin-top: 0.4rem;
+        background: #94a3b8;
+        position: relative;
+        overflow: hidden;
+      }
+      .resource-bar::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--accent);
+        transform-origin: left;
+        transform: scaleX(0.4);
+        transition: transform 0.4s ease;
+      }
+      #resource-visual[data-css='blocking']
+        .resource[data-type='css']
+        .resource-bar::after {
+        transform: scaleX(1);
+      }
+      #resource-visual[data-css='async']
+        .resource[data-type='css']
+        .resource-bar::after {
+        transform: scaleX(0.5);
+      }
+      #resource-visual[data-js='blocking']
+        .resource[data-type='js']
+        .resource-bar::after {
+        transform: scaleX(0.9);
+      }
+      #resource-visual[data-js='defer']
+        .resource[data-type='js']
+        .resource-bar::after {
+        transform: scaleX(0.35);
+        background: #22c55e;
+      }
+      #resource-visual[data-img='eager']
+        .resource[data-type='img']
+        .resource-bar::after {
+        transform: scaleX(0.6);
+      }
+      #resource-visual[data-img='lazy']
+        .resource[data-type='img']
+        .resource-bar::after {
+        transform: scaleX(0.25);
+        background: #a855f7;
+      }
+      .callout {
+        border-left: 4px solid var(--accent);
+        padding: 0.6rem 1rem;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-radius: 0.4rem;
+      }
+      .demo-block {
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+      }
+      .demo-block h3 {
+        margin-top: 0;
+      }
+      .demo-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+      }
+      .demo-controls button {
+        border: none;
+        border-radius: 0.6rem;
+        padding: 0.5rem 0.9rem;
+        background: #e0e7ff;
+        cursor: pointer;
+        font-weight: 600;
+        color: #1e1b4b;
+      }
+      .demo-controls button[data-active='true'] {
+        background: var(--accent);
+        color: #fff;
+      }
+      .demo-surface {
+        background: #f8fafc;
+        border-radius: 0.8rem;
+        padding: 1rem;
+        border: 1px dashed #cbd5f5;
+      }
+      .css-preview {
+        min-height: 120px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 0.6rem;
+        transition: filter 0.4s ease;
+      }
+      .css-preview .card {
+        padding: 0.7rem;
+        border-radius: 0.6rem;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px #e2e8f0;
+      }
+      .css-preview.mode-waiting {
+        filter: grayscale(1) blur(0.5px);
+      }
+      .css-preview.mode-heavy .card {
+        background: #0f172a;
+        color: #f8fafc;
+        box-shadow: none;
+      }
+      .css-preview.mode-optimized .card {
+        background: #e0f2fe;
+        color: #0c4a6e;
+      }
+      .hero-block {
+        min-height: 90px;
+        border-radius: 0.8rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #fdf2f8, #ede9fe);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .hero-block[data-state='waiting'] {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+      .thrash-area {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(20px, 1fr));
+        gap: 0.4rem;
+      }
+      .thrash-box {
+        background: #c7d2fe;
+        aspect-ratio: 1;
+        border-radius: 0.4rem;
+        transition: transform 0.2s ease;
+      }
+      .font-preview {
+        font-size: 1.3rem;
+        min-height: 70px;
+        padding: 1rem;
+        background: #fdf4ff;
+        border-radius: 0.6rem;
+        font-family: system-ui, sans-serif;
+        transition:
+          color 0.3s ease,
+          font-family 0.3s ease;
+      }
+      .font-preview.font-foit {
+        color: transparent;
+      }
+      .font-preview.font-loaded {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        color: #4c1d95;
+      }
+      .font-preview.font-swap::after {
+        content: ' (fallback)';
+        font-size: 0.8rem;
+        color: #7e22ce;
+      }
+      .hero-surface {
+        margin: 0;
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      }
+      .hero-surface img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      aside#instrumentation {
+        background: var(--panel-bg);
+        color: var(--panel-text);
+        padding: 1.4rem;
+        border-radius: 1rem;
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 5rem;
+        align-self: start;
+      }
+      #scenario-badge {
+        margin: 0.2rem 0 1rem;
+        font-weight: 600;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+      .metric {
+        background: rgba(15, 23, 42, 0.4);
+        padding: 0.6rem;
+        border-radius: 0.6rem;
+        font-size: 0.85rem;
+      }
+      .metric strong {
+        display: block;
+        margin-top: 0.1rem;
+        font-size: 1.1rem;
+      }
+      canvas#timeline-canvas {
+        width: 100%;
+        height: 140px;
+        margin-top: 1rem;
+        border-radius: 0.4rem;
+        background: #020617;
+      }
+      .longtasks {
+        margin-top: 1rem;
+        font-size: 0.85rem;
+      }
+      .longtasks ul {
+        padding-left: 1.1rem;
+        margin: 0.4rem 0 0;
+      }
+      .panel-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 1rem;
+      }
+      .panel-actions button {
+        border: none;
+        border-radius: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #soft-reset {
+        background: #1d4ed8;
+        color: #fff;
+      }
+      #hard-reload {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+      #observer-status {
+        font-size: 0.8rem;
+        color: #cbd5f5;
+        margin-top: 0.8rem;
+      }
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        aside#instrumentation {
+          position: static;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+    <script>
+      (function () {
+        const params = new URLSearchParams(location.search);
+        const scenario = params.get('scenario') || 'baseline';
+        window.__scenario = scenario;
+        document.documentElement.dataset.scenario = scenario;
+        if (scenario === 'blocking-js') {
+          const start = performance.now();
+          while (performance.now() - start < 180) {
+            Math.sqrt(start);
+          }
+          performance.mark && performance.mark('parser-blocking-script-end');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-layout">
+        <div>
+          <p class="eyebrow">Live notebook</p>
+          <h1>Teaching the Browser its Critical Rendering Path</h1>
+          <p>
+            The Critical Rendering Path (CRP) is everything the browser must do
+            to turn bytes into pixels. This article doubles as a playground—each
+            section feeds the live instrumentation panel so you can see how
+            <strong>CSS, JavaScript, layout, fonts, and images</strong> change
+            First Paint, LCP, CLS, and more. Current scenario:
+            <span id="scenario-note">Baseline (straightforward load)</span>.
+          </p>
+        </div>
+        <form id="scenario-form" aria-label="Scenario selector">
+          <label for="scenario-select">Scenario selector</label>
+          <select id="scenario-select" name="scenario">
+            <option value="baseline">Baseline</option>
+            <option value="heavy-css">Heavy CSS</option>
+            <option value="blocking-js">Blocking JS</option>
+            <option value="layout-thrash">Layout thrash</option>
+            <option value="font-block">Font block (FOIT)</option>
+            <option value="font-swap">Font swap (FOUT)</option>
+            <option value="heavy-lcp">Heavy LCP</option>
+          </select>
+          <button type="submit">Apply (reload)</button>
+        </form>
+      </div>
+    </header>
+
+    <div class="layout">
+      <article>
+        <section id="what-is-crp">
+          <h2>Why the CRP matters</h2>
+          <p>
+            Browsers follow a strict sequence: download, parse, style, layout,
+            paint, then keep responding to input. Every blocking resource delays
+            those steps. The live panel to the right captures
+            <abbr title="First Contentful Paint">FCP</abbr>,
+            <abbr title="Largest Contentful Paint">LCP</abbr>, cumulative layout
+            shift (CLS), long tasks, and a waterfall so you can connect theory
+            to telemetry. Flip scenarios at the top, then watch the deltas.
+          </p>
+          <p class="callout" id="panel-callout">
+            Hint: with “Blocking JS” selected you should see FCP slip because
+            the synthetic parser-stalling script runs before the first paint.
+          </p>
+        </section>
+
+        <section id="pipeline">
+          <h2>The pipeline</h2>
+          <p>
+            This simplified diagram shows how HTML and CSS travel through the
+            renderer. The DOM must wait for blocking scripts, CSS must be parsed
+            before the render tree exists, and layout/paint/composite repeat
+            whenever scripts mutate the page.
+          </p>
+          <figure aria-label="Critical rendering pipeline diagram">
+            <svg viewBox="0 0 960 180" role="img" aria-labelledby="pipe-title">
+              <title id="pipe-title">Critical Rendering Path</title>
+              <defs>
+                <marker
+                  id="arrowhead"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"></path>
+                </marker>
+              </defs>
+              <rect
+                class="diagram-node"
+                x="20"
+                y="30"
+                width="140"
+                height="60"
+              ></rect>
+              <text x="90" y="68" text-anchor="middle" font-size="16">
+                HTML
+              </text>
+              <rect
+                class="diagram-node"
+                x="20"
+                y="110"
+                width="140"
+                height="60"
+                fill="#e9d5ff"
+                stroke="#9333ea"
+              ></rect>
+              <text x="90" y="148" text-anchor="middle" font-size="16">
+                CSS
+              </text>
+
+              <rect
+                class="diagram-node"
+                x="220"
+                y="30"
+                width="160"
+                height="60"
+              ></rect>
+              <text x="300" y="68" text-anchor="middle" font-size="16">
+                DOM
+              </text>
+              <rect
+                class="diagram-node"
+                x="220"
+                y="110"
+                width="160"
+                height="60"
+                fill="#e9d5ff"
+                stroke="#9333ea"
+              ></rect>
+              <text x="300" y="148" text-anchor="middle" font-size="16">
+                CSSOM
+              </text>
+
+              <rect
+                class="diagram-node"
+                x="420"
+                y="70"
+                width="160"
+                height="70"
+                fill="#fee2e2"
+                stroke="#ef4444"
+              ></rect>
+              <text x="500" y="110" text-anchor="middle" font-size="16">
+                Render Tree
+              </text>
+
+              <rect
+                class="diagram-node"
+                x="620"
+                y="30"
+                width="140"
+                height="60"
+                fill="#dcfce7"
+                stroke="#16a34a"
+              ></rect>
+              <text x="690" y="68" text-anchor="middle" font-size="16">
+                Layout
+              </text>
+              <rect
+                class="diagram-node"
+                x="620"
+                y="110"
+                width="140"
+                height="60"
+                fill="#fde68a"
+                stroke="#f59e0b"
+              ></rect>
+              <text x="690" y="148" text-anchor="middle" font-size="16">
+                Paint
+              </text>
+              <rect
+                class="diagram-node"
+                x="800"
+                y="70"
+                width="140"
+                height="70"
+                fill="#fee2e2"
+                stroke="#fb7185"
+              ></rect>
+              <text x="870" y="110" text-anchor="middle" font-size="16">
+                Composite
+              </text>
+
+              <line
+                class="diagram-arrow"
+                x1="160"
+                y1="60"
+                x2="220"
+                y2="60"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="160"
+                y1="140"
+                x2="220"
+                y2="140"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="380"
+                y1="80"
+                x2="420"
+                y2="90"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="380"
+                y1="140"
+                x2="420"
+                y2="120"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="580"
+                y1="100"
+                x2="620"
+                y2="70"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="580"
+                y1="110"
+                x2="620"
+                y2="140"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="760"
+                y1="60"
+                x2="800"
+                y2="90"
+              ></line>
+              <line
+                class="diagram-arrow"
+                x1="760"
+                y1="140"
+                x2="800"
+                y2="120"
+              ></line>
+            </svg>
+          </figure>
+        </section>
+
+        <section id="blocking">
+          <h2>Blocking vs non-blocking resources</h2>
+          <p>
+            Use the toggles to see how resource priority alters the path. A red
+            bar means parsing must stop until that resource finishes.
+            Green/purple bars show work pushed off the critical path (via defer,
+            async, lazy loading, etc.).
+          </p>
+          <div class="toggle-panel">
+            <label
+              ><input type="checkbox" id="css-toggle" checked /> CSS in
+              &lt;head&gt; is blocking</label
+            >
+            <label
+              ><input type="checkbox" id="js-toggle" checked /> Inline script
+              blocks parser</label
+            >
+            <label
+              ><input type="checkbox" id="img-toggle" /> Images lazy-load</label
+            >
+          </div>
+          <div
+            id="resource-visual"
+            data-css="blocking"
+            data-js="blocking"
+            data-img="lazy"
+          >
+            <div class="resource" data-type="css">
+              <div class="resource-header">
+                <span>CSS</span
+                ><span class="resource-state" data-resource-label="css"
+                  >Blocking</span
+                >
+              </div>
+              <div class="resource-bar"></div>
+            </div>
+            <div class="resource" data-type="js">
+              <div class="resource-header">
+                <span>JavaScript</span
+                ><span class="resource-state" data-resource-label="js"
+                  >Blocking</span
+                >
+              </div>
+              <div class="resource-bar"></div>
+            </div>
+            <div class="resource" data-type="img">
+              <div class="resource-header">
+                <span>Images</span
+                ><span class="resource-state" data-resource-label="img"
+                  >Lazy</span
+                >
+              </div>
+              <div class="resource-bar"></div>
+            </div>
+          </div>
+          <p id="resource-summary">
+            CSS and JS are currently blocking, so render work waits before the
+            first paint. Images are lazy, so they stream in after FCP.
+          </p>
+        </section>
+
+        <section id="demos">
+          <h2>The demos</h2>
+          <p>
+            Each demo maps to one of the common CRP hazards. Trigger them and
+            cross-check the instrumentation panel for paint times, LCP, CLS, and
+            long tasks. Scenario presets at the top simply run these demos for
+            you on load.
+          </p>
+
+          <article class="demo-block" id="demo-css">
+            <h3>Demo A — Render-blocking CSS</h3>
+            <p>
+              We can’t measure CSS parse time directly, so we simulate a bloated
+              stylesheet that “arrives” late versus concise critical CSS. Watch
+              the preview cards as well as FCP/LCP.
+            </p>
+            <div class="demo-controls">
+              <button type="button" data-css-mode="heavy">
+                Heavy blocking CSS
+              </button>
+              <button type="button" data-css-mode="optimized">
+                Optimized critical CSS
+              </button>
+            </div>
+            <div class="demo-surface">
+              <div id="css-preview" class="css-preview" aria-live="polite">
+                <div class="card">Hero copy</div>
+                <div class="card">Primary CTA</div>
+                <div class="card">Secondary CTA</div>
+                <div class="card">Feature tile</div>
+                <div class="card">Pricing block</div>
+                <div class="card">Footer nav</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="demo-block" id="demo-js">
+            <h3>Demo B — Parser-blocking JS vs defer</h3>
+            <p>
+              A synchronous script in the head halts HTML parsing and stops the
+              first paint. Deferred work lets the hero render, then runs after
+              DOMContentLoaded. Try both buttons and notice long tasks in the
+              panel.
+            </p>
+            <div class="demo-controls">
+              <button type="button" data-js-mode="blocking">
+                Blocking script
+              </button>
+              <button type="button" data-js-mode="defer">
+                Deferred script
+              </button>
+            </div>
+            <div class="demo-surface">
+              <div class="hero-block" id="js-hero" aria-live="polite">
+                Hero content is ready. Choose a script mode to replay.
+              </div>
+            </div>
+          </article>
+
+          <article class="demo-block" id="demo-layout">
+            <h3>Demo C — Layout thrash vs batching</h3>
+            <p>
+              Reading layout metrics (like <code>offsetHeight</code>) between
+              style writes forces synchronous reflow. Batching reads and writes
+              or using <code>requestAnimationFrame</code> keeps the pipeline
+              smooth.
+            </p>
+            <div class="demo-controls">
+              <button type="button" data-layout-mode="thrash">
+                Trigger layout thrash
+              </button>
+              <button type="button" data-layout-mode="batch">
+                Optimized batching
+              </button>
+              <span>Forced layouts: <strong id="layout-count">0</strong></span>
+            </div>
+            <div class="demo-surface">
+              <div
+                id="thrash-area"
+                class="thrash-area"
+                aria-live="polite"
+              ></div>
+            </div>
+          </article>
+
+          <article class="demo-block" id="demo-font">
+            <h3>Demo D — Font loading strategy</h3>
+            <p>
+              Fonts without <code>font-display</code> cause FOIT (Flash of
+              Invisible Text). Using “swap” shows fallback text immediately
+              (FOUT) and swaps when the font is ready. We simulate both without
+              external files.
+            </p>
+            <div class="demo-controls">
+              <button type="button" data-font-mode="foit">
+                Block text (FOIT)
+              </button>
+              <button type="button" data-font-mode="swap">
+                Swap text (FOUT)
+              </button>
+            </div>
+            <div class="demo-surface">
+              <div id="font-preview" class="font-preview" aria-live="polite">
+                Click a strategy to simulate font behavior.
+              </div>
+            </div>
+          </article>
+
+          <article class="demo-block" id="demo-lcp">
+            <h3>Demo E — Image weight &amp; LCP</h3>
+            <p>
+              The largest contentful paint is often your hero image. Toggle
+              between a light inline SVG and a delayed “heavy” illustration to
+              see how LCP shifts.
+            </p>
+            <div class="demo-controls">
+              <button type="button" data-lcp-mode="light">Light hero</button>
+              <button type="button" data-lcp-mode="heavy">Heavy hero</button>
+              <span>Active target: <strong id="lcp-label">light</strong></span>
+            </div>
+            <div class="demo-surface hero-surface">
+              <img id="hero-img" alt="Hero illustration" decoding="async" />
+            </div>
+            <p class="callout" id="lcp-callout">
+              In the baseline scenario the hero draws almost immediately, so LCP
+              should stay near FCP.
+            </p>
+          </article>
+        </section>
+
+        <section id="real-apps">
+          <h2>What to do in real apps</h2>
+          <ul>
+            <li>
+              Inline only the CSS needed for above-the-fold content, then load
+              the rest with <code>media</code> queries or
+              <code>rel="preload"</code> + <code>rel="stylesheet"</code>.
+            </li>
+            <li>
+              Place blocking scripts at the end of <code>&lt;body&gt;</code> or
+              add <code>defer</code>/<code>async</code> so HTML parsing keeps
+              going.
+            </li>
+            <li>
+              Batch DOM reads and writes, or move mutations into
+              <code>requestAnimationFrame</code> to avoid layout thrash.
+            </li>
+            <li>
+              Declare <code>font-display: swap</code> (or optional) and preload
+              truly critical fonts.
+            </li>
+            <li>
+              Identify your LCP element early, prioritize its resource with
+              <code>preload</code>, and size media to avoid layout shifts.
+            </li>
+            <li>
+              Monitor real-user metrics. The instrumentation panel here mirrors
+              the data you can collect via the Performance APIs and send to your
+              analytics backend.
+            </li>
+          </ul>
+        </section>
+      </article>
+
+      <aside id="instrumentation" aria-live="polite">
+        <h2>Live instrumentation</h2>
+        <p id="scenario-badge">Scenario: baseline</p>
+        <div class="metric-grid">
+          <div class="metric">
+            <span>TTFB</span><strong data-metric="ttfb">—</strong>
+          </div>
+          <div class="metric">
+            <span>DOMContentLoaded</span><strong data-metric="dcl">—</strong>
+          </div>
+          <div class="metric">
+            <span>Load</span><strong data-metric="load">—</strong>
+          </div>
+          <div class="metric">
+            <span>First Paint</span><strong data-metric="fp">—</strong>
+          </div>
+          <div class="metric">
+            <span>FCP</span><strong data-metric="fcp">—</strong>
+          </div>
+          <div class="metric">
+            <span>LCP</span><strong data-metric="lcp">—</strong>
+          </div>
+          <div class="metric">
+            <span>CLS</span><strong data-metric="cls">0.000</strong>
+          </div>
+          <div class="metric">
+            <span>Long tasks</span
+            ><strong data-metric="longtask-count">0</strong>
+          </div>
+        </div>
+        <canvas
+          id="timeline-canvas"
+          width="320"
+          height="160"
+          aria-label="Timeline of key events"
+        ></canvas>
+        <div class="longtasks">
+          <strong>Long task log</strong>
+          <ul id="longtask-list">
+            <li>No tasks yet.</li>
+          </ul>
+        </div>
+        <div class="panel-actions">
+          <button type="button" id="soft-reset">
+            Reset &amp; rerun scenario
+          </button>
+          <button type="button" id="hard-reload">Reload with scenario</button>
+        </div>
+        <p id="observer-status">Setting up observers…</p>
+      </aside>
+    </div>
+
+    <script>
+      /* ---------- helpers ---------- */
+      const scenarioDescriptions = {
+        baseline: 'Baseline: nothing extra added to the CRP.',
+        'heavy-css': 'Heavy CSS: bloated styles delay first paint.',
+        'blocking-js':
+          'Blocking JS: synchronous head script stalls the parser.',
+        'layout-thrash': 'Layout thrash: scripts force repeated reflow.',
+        'font-block':
+          'Font block (FOIT): text stays hidden until fonts finish.',
+        'font-swap': 'Font swap (FOUT): fallback text swaps once ready.',
+        'heavy-lcp': 'Heavy LCP: hero image waits, delaying the largest paint.',
+      };
+
+      /* ---------- metrics.js ---------- */
+      const MetricsModule = (() => {
+        const supportsPO = typeof PerformanceObserver !== 'undefined';
+        const supported = SupportsList();
+        const state = {
+          metrics: {
+            ttfb: null,
+            dcl: null,
+            load: null,
+            fp: null,
+            fcp: null,
+            lcp: null,
+            cls: 0,
+            longTasks: [],
+          },
+          timeline: [],
+          scenario: window.__scenario || 'baseline',
+        };
+        const colors = {
+          nav: '#94a3b8',
+          paint: '#22c55e',
+          lcp: '#f59e0b',
+          lifecycle: '#0ea5e9',
+          custom: '#a855f7',
+          long: '#ef4444',
+        };
+        let canvas,
+          ctx,
+          ratio = window.devicePixelRatio || 1;
+        const metricEls = {};
+        function SupportsList() {
+          if (!supportsPO) return [];
+          return PerformanceObserver.supportedEntryTypes || [];
+        }
+        function init() {
+          canvas = document.getElementById('timeline-canvas');
+          if (canvas) {
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+          }
+          document.querySelectorAll('[data-metric]').forEach((el) => {
+            metricEls[el.dataset.metric] = el;
+          });
+          addEvent('navStart', 0, colors.nav);
+          captureNavTimings();
+          hookLifecycle();
+          setupPaint();
+          setupLCP();
+          setupCLS();
+          setupLongTasks();
+          fallbackPaintIfNeeded();
+          updatePanel();
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+              disconnectObservers();
+            }
+          });
+        }
+        let observers = [];
+        function disconnectObservers() {
+          observers.forEach((o) => o.disconnect());
+          observers = [];
+        }
+        function resizeCanvas() {
+          if (!canvas || !ctx) return;
+          const width = canvas.clientWidth || 320;
+          const height = 160;
+          ratio = window.devicePixelRatio || 1;
+          canvas.width = width * ratio;
+          canvas.height = height * ratio;
+          ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+          renderTimeline();
+        }
+        function captureNavTimings() {
+          const nav =
+            performance.getEntriesByType &&
+            performance.getEntriesByType('navigation')[0];
+          if (nav) {
+            state.metrics.ttfb = Math.max(
+              0,
+              Math.round(nav.responseStart - nav.startTime),
+            );
+            setMetric('ttfb', state.metrics.ttfb);
+          }
+        }
+        function hookLifecycle() {
+          const recorded = {};
+          const record = (name) => {
+            if (recorded[name]) return;
+            recorded[name] = true;
+            const time = Math.round(performance.now());
+            if (name === 'DOMContentLoaded') state.metrics.dcl = time;
+            if (name === 'load') state.metrics.load = time;
+            addEvent(name, time, colors.lifecycle);
+            updatePanel();
+          };
+          if (document.readyState === 'loading') {
+            document.addEventListener(
+              'DOMContentLoaded',
+              () => record('DOMContentLoaded'),
+              { once: true },
+            );
+          } else {
+            record('DOMContentLoaded');
+          }
+          if (document.readyState === 'complete') {
+            record('load');
+          } else {
+            window.addEventListener('load', () => record('load'), {
+              once: true,
+            });
+          }
+        }
+        function setupPaint() {
+          if (!supportsPO || !supported.includes('paint')) return;
+          const paintObserver = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              const time = Math.round(entry.startTime);
+              if (entry.name === 'first-paint') {
+                state.metrics.fp = time;
+                addEvent('FP', time, colors.paint);
+              }
+              if (entry.name === 'first-contentful-paint') {
+                state.metrics.fcp = time;
+                addEvent('FCP', time, colors.paint);
+              }
+              updatePanel();
+            }
+          });
+          paintObserver.observe({ type: 'paint', buffered: true });
+          observers.push(paintObserver);
+        }
+        function fallbackPaintIfNeeded() {
+          if (state.metrics.fp && state.metrics.fcp) return;
+          const paints =
+            performance.getEntriesByType ?
+              performance.getEntriesByType('paint')
+            : [];
+          paints.forEach((entry) => {
+            const time = Math.round(entry.startTime);
+            if (entry.name === 'first-paint' && !state.metrics.fp) {
+              state.metrics.fp = time;
+              addEvent('FP', time, colors.paint);
+            }
+            if (entry.name === 'first-contentful-paint' && !state.metrics.fcp) {
+              state.metrics.fcp = time;
+              addEvent('FCP', time, colors.paint);
+            }
+          });
+          updatePanel();
+        }
+        function setupLCP() {
+          if (!supportsPO || !supported.includes('largest-contentful-paint')) {
+            updateObserverStatus();
+            return;
+          }
+          const lcpObserver = new PerformanceObserver((list) => {
+            const entries = list.getEntries();
+            const last = entries[entries.length - 1];
+            if (last) {
+              const time = Math.round(last.startTime);
+              state.metrics.lcp = time;
+              addEvent(
+                'LCP',
+                time,
+                colors.lcp,
+                last.element ? last.element.tagName : '',
+              );
+              updatePanel();
+            }
+          });
+          try {
+            lcpObserver.observe({
+              type: 'largest-contentful-paint',
+              buffered: true,
+            });
+            observers.push(lcpObserver);
+          } catch (e) {}
+        }
+        function setupCLS() {
+          if (!supportsPO || !supported.includes('layout-shift')) return;
+          const clsObserver = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              if (entry.hadRecentInput) continue;
+              state.metrics.cls += entry.value;
+              setMetric('cls', state.metrics.cls.toFixed(3));
+            }
+          });
+          clsObserver.observe({ type: 'layout-shift', buffered: true });
+          observers.push(clsObserver);
+        }
+        function setupLongTasks() {
+          if (!supportsPO || !supported.includes('longtask')) {
+            updateObserverStatus();
+            return;
+          }
+          const longObserver = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              const start = Math.round(entry.startTime);
+              state.metrics.longTasks.push({
+                start,
+                duration: Math.round(entry.duration),
+              });
+              addEvent('Long task', start, colors.long);
+              updateLongTasks();
+            }
+          });
+          longObserver.observe({ type: 'longtask', buffered: true });
+          observers.push(longObserver);
+        }
+        function updateLongTasks() {
+          const list = document.getElementById('longtask-list');
+          if (!list) return;
+          if (!state.metrics.longTasks.length) {
+            list.innerHTML = '<li>No tasks yet.</li>';
+            return;
+          }
+          list.innerHTML = '';
+          state.metrics.longTasks.slice(-5).forEach((task) => {
+            const li = document.createElement('li');
+            li.textContent = `${task.duration}ms at ${task.start}ms`;
+            list.appendChild(li);
+          });
+          setMetric('longtask-count', state.metrics.longTasks.length);
+        }
+        function addEvent(label, time, color, desc) {
+          state.timeline.push({ label, time, color, desc });
+          renderTimeline();
+        }
+        function renderTimeline() {
+          if (!ctx) return;
+          const width = canvas.width / ratio;
+          const height = canvas.height / ratio;
+          ctx.clearRect(0, 0, width, height);
+          const events = state.timeline.slice().sort((a, b) => a.time - b.time);
+          const max = Math.max(1000, events.at(-1)?.time || 1000);
+          const axisY = height - 20;
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(10, axisY);
+          ctx.lineTo(width - 10, axisY);
+          ctx.stroke();
+          ctx.font =
+            '10px ' +
+            (navigator.userAgent.includes('Windows') ?
+              'Segoe UI'
+            : 'system-ui');
+          events.forEach((evt, i) => {
+            const x = 10 + (evt.time / max) * (width - 20);
+            ctx.strokeStyle = evt.color;
+            ctx.beginPath();
+            ctx.moveTo(x, axisY);
+            ctx.lineTo(x, axisY - 30);
+            ctx.stroke();
+            ctx.fillStyle = '#cbd5f5';
+            const text = evt.label;
+            ctx.fillText(text, x - text.length * 2, axisY - 34 - (i % 3) * 12);
+          });
+        }
+        function updatePanel() {
+          setMetric('ttfb', state.metrics.ttfb);
+          setMetric('dcl', state.metrics.dcl);
+          setMetric('load', state.metrics.load);
+          setMetric('fp', state.metrics.fp);
+          setMetric('fcp', state.metrics.fcp);
+          setMetric('lcp', state.metrics.lcp);
+          setMetric('cls', state.metrics.cls.toFixed(3));
+          setMetric('longtask-count', state.metrics.longTasks.length);
+        }
+        function setMetric(name, value) {
+          const el = metricEls[name];
+          if (!el) return;
+          if (value === null || value === undefined || Number.isNaN(value)) {
+            el.textContent = '—';
+            return;
+          }
+          if (name === 'cls') el.textContent = value;
+          else if (name === 'longtask-count') el.textContent = value;
+          else el.textContent = `${value} ms`;
+        }
+        function updateObserverStatus() {
+          const status = document.getElementById('observer-status');
+          if (!status) return;
+          if (!supportsPO) {
+            status.textContent =
+              'PerformanceObserver not available; falling back to navigation timing only.';
+          } else {
+            const missing = [];
+            [
+              'paint',
+              'largest-contentful-paint',
+              'layout-shift',
+              'longtask',
+            ].forEach((type) => {
+              if (!supported.includes(type)) missing.push(type);
+            });
+            status.textContent =
+              missing.length ?
+                `Missing observer types: ${missing.join(', ')}. Using fallbacks where possible.`
+              : 'All core observers active.';
+          }
+        }
+        function manualLCP(label) {
+          if (supported.includes('largest-contentful-paint')) return;
+          const time = Math.round(performance.now());
+          state.metrics.lcp = time;
+          addEvent(label || 'LCP (manual)', time, colors.lcp);
+          updatePanel();
+        }
+        function customMark(label, color) {
+          addEvent(
+            label,
+            Math.round(performance.now()),
+            color || colors.custom,
+          );
+          updatePanel();
+        }
+        return { init, manualLCP, customMark, state };
+      })();
+
+      /* ---------- demos.js ---------- */
+      const DemosModule = (() => {
+        const metrics = MetricsModule;
+        let heavyStyleCreated = false;
+        const lcpImages = {
+          light:
+            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="900" height="400"><rect width="900" height="400" fill="%23dbeafe"/><text x="50%" y="50%" font-size="48" text-anchor="middle" fill="%230256d1" font-family="Verdana">Swift hero</text></svg>',
+          heavy:
+            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="900" height="400"><defs><radialGradient id="g" cx="50%" cy="50%" r="80%"><stop offset="0" stop-color="%23fde68a"/><stop offset="1" stop-color="%23f97316"/></radialGradient></defs><rect width="900" height="400" fill="url(%23g)"/><circle cx="200" cy="160" r="80" fill="%23fb923c"/><circle cx="320" cy="220" r="60" fill="%23fb7185"/><rect x="420" y="120" width="340" height="160" rx="24" fill="%23fff"/><text x="590" y="210" font-size="42" text-anchor="middle" fill="%23ea580c" font-family="Verdana">Heavy hero</text></svg>',
+        };
+        let thrashBoxesReady = false;
+        function init() {
+          document
+            .querySelectorAll('#demo-css button[data-css-mode]')
+            .forEach((btn) =>
+              btn.addEventListener('click', () =>
+                runCSS(btn.dataset.cssMode, true),
+              ),
+            );
+          document
+            .querySelectorAll('#demo-js button[data-js-mode]')
+            .forEach((btn) =>
+              btn.addEventListener('click', () =>
+                runJS(btn.dataset.jsMode, true),
+              ),
+            );
+          document
+            .querySelectorAll('#demo-layout button[data-layout-mode]')
+            .forEach((btn) =>
+              btn.addEventListener('click', () =>
+                runLayout(btn.dataset.layoutMode, true),
+              ),
+            );
+          document
+            .querySelectorAll('#demo-font button[data-font-mode]')
+            .forEach((btn) =>
+              btn.addEventListener('click', () =>
+                runFont(btn.dataset.fontMode, true),
+              ),
+            );
+          document
+            .querySelectorAll('#demo-lcp button[data-lcp-mode]')
+            .forEach((btn) =>
+              btn.addEventListener('click', () =>
+                runLCP(btn.dataset.lcpMode, true),
+              ),
+            );
+          prepareThrashGrid();
+          runLCP('light', false);
+        }
+        function prepareThrashGrid() {
+          if (thrashBoxesReady) return;
+          const area = document.getElementById('thrash-area');
+          const frag = document.createDocumentFragment();
+          for (let i = 0; i < 24; i++) {
+            const div = document.createElement('div');
+            div.className = 'thrash-box';
+            frag.appendChild(div);
+          }
+          area.appendChild(frag);
+          thrashBoxesReady = true;
+        }
+        function ensureHeavyStyle() {
+          if (heavyStyleCreated) return;
+          const style = document.createElement('style');
+          style.id = 'heavy-css-style';
+          let rules =
+            '.css-preview.mode-heavy .card{border:1px solid rgba(255,255,255,.2);}\n';
+          for (let i = 0; i < 220; i++) {
+            rules += `.css-preview.mode-heavy .card:nth-child(${(i % 6) + 1}){box-shadow:0 0 ${i % 5}px rgba(15,23,42,0.${i % 9});}\n`;
+          }
+          style.textContent = rules;
+          document.head.appendChild(style);
+          heavyStyleCreated = true;
+        }
+        function toggleActiveButtons(groupSelector, clicked) {
+          document
+            .querySelectorAll(groupSelector)
+            .forEach(
+              (btn) =>
+                (btn.dataset.active = btn === clicked ? 'true' : 'false'),
+            );
+        }
+        function runCSS(mode, fromUser) {
+          const preview = document.getElementById('css-preview');
+          toggleActiveButtons(
+            '#demo-css button[data-css-mode]',
+            fromUser ? event.currentTarget : null,
+          );
+          preview.classList.remove(
+            'mode-heavy',
+            'mode-optimized',
+            'mode-waiting',
+          );
+          if (mode === 'heavy') {
+            ensureHeavyStyle();
+            preview.classList.add('mode-waiting');
+            metrics.customMark('Heavy CSS queued', '#fb7185');
+            setTimeout(() => {
+              preview.classList.remove('mode-waiting');
+              preview.classList.add('mode-heavy');
+              metrics.customMark('Heavy CSS applied', '#e11d48');
+            }, 1000);
+          } else {
+            preview.classList.add('mode-optimized');
+            metrics.customMark('Critical CSS inline', '#22c55e');
+          }
+        }
+        function busyWork(duration) {
+          const start = performance.now();
+          while (performance.now() - start < duration) {
+            Math.sqrt(start * performance.now());
+          }
+        }
+        function runJS(mode, fromUser) {
+          const hero = document.getElementById('js-hero');
+          toggleActiveButtons(
+            '#demo-js button[data-js-mode]',
+            fromUser ? event.currentTarget : null,
+          );
+          if (mode === 'blocking') {
+            hero.dataset.state = 'waiting';
+            hero.textContent = 'Parser waits…';
+            metrics.customMark('Blocking script executes', '#f97316');
+            busyWork(240);
+            hero.dataset.state = 'done';
+            hero.textContent = 'Hero rendered after blocking script finished.';
+          } else {
+            hero.dataset.state = 'ok';
+            hero.textContent = 'Hero content renders, heavy work deferred.';
+            metrics.customMark('Deferred script scheduled', '#10b981');
+            setTimeout(() => {
+              busyWork(200);
+              hero.textContent =
+                'Deferred work finished without blocking parse.';
+              metrics.customMark('Deferred work run', '#059669');
+            }, 450);
+          }
+        }
+        function runLayout(mode, fromUser) {
+          toggleActiveButtons(
+            '#demo-layout button[data-layout-mode]',
+            fromUser ? event.currentTarget : null,
+          );
+          const boxes = [...document.querySelectorAll('.thrash-box')];
+          const counter = document.getElementById('layout-count');
+          let ops = 0;
+          if (mode === 'thrash') {
+            for (let i = 0; i < 220; i++) {
+              const box = boxes[i % boxes.length];
+              const h = box.offsetHeight;
+              box.style.transform = `scale(${1 + (i % 5) * 0.05}) rotate(${i % 10}deg)`;
+              box.style.background = `hsl(${(i * 9) % 360},70%,70%)`;
+              if (h) ops++;
+            }
+          } else {
+            const heights = boxes.map((box) => box.offsetHeight);
+            for (let i = 0; i < boxes.length; i++) {
+              boxes[i].style.transform = '';
+              boxes[i].style.background = '#c7d2fe';
+            }
+            requestAnimationFrame(() => {
+              for (let i = 0; i < 220; i++) {
+                const box = boxes[i % boxes.length];
+                box.style.transform = `translateY(${(i % 6) - 3}px)`;
+                ops = heights.length;
+              }
+            });
+          }
+          counter.textContent = ops;
+          metrics.customMark(
+            mode === 'thrash' ? 'Layout thrash' : 'Layout batched',
+            mode === 'thrash' ? '#dc2626' : '#16a34a',
+          );
+        }
+        function runFont(mode, fromUser) {
+          toggleActiveButtons(
+            '#demo-font button[data-font-mode]',
+            fromUser ? event.currentTarget : null,
+          );
+          const preview = document.getElementById('font-preview');
+          preview.classList.remove('font-foit', 'font-swap', 'font-loaded');
+          if (mode === 'foit') {
+            preview.classList.add('font-foit');
+            preview.textContent = 'Waiting for font (FOIT)…';
+            metrics.customMark('Font blocked', '#fda4af');
+            setTimeout(() => {
+              preview.classList.remove('font-foit');
+              preview.classList.add('font-loaded');
+              preview.textContent =
+                'Font finally arrived — pixels just appeared.';
+              metrics.customMark('Font visible', '#ec4899');
+            }, 1200);
+          } else {
+            preview.classList.add('font-swap');
+            preview.textContent = 'Fallback text is visible immediately.';
+            metrics.customMark('Font swap fallback', '#7c3aed');
+            setTimeout(() => {
+              preview.classList.add('font-loaded');
+              preview.textContent = 'Font swapped in without hiding text.';
+              metrics.customMark('Font swap complete', '#a855f7');
+            }, 700);
+          }
+        }
+        function runLCP(mode, fromUser) {
+          toggleActiveButtons(
+            '#demo-lcp button[data-lcp-mode]',
+            fromUser ? event.currentTarget : null,
+          );
+          document.getElementById('lcp-label').textContent = mode;
+          const img = document.getElementById('hero-img');
+          img.src = '';
+          img.alt =
+            mode === 'heavy' ?
+              'Delayed heavy hero illustration'
+            : 'Lightweight hero illustration';
+          const show = () => {
+            img.src = lcpImages[mode];
+            metrics.customMark(
+              mode === 'heavy' ? 'Heavy hero appended' : 'Light hero appended',
+              mode === 'heavy' ? '#facc15' : '#14b8a6',
+            );
+            if (
+              !PerformanceObserver ||
+              !(PerformanceObserver.supportedEntryTypes || []).includes(
+                'largest-contentful-paint',
+              )
+            ) {
+              metrics.manualLCP(
+                mode === 'heavy' ? 'Manual LCP heavy' : 'Manual LCP light',
+              );
+            }
+          };
+          if (mode === 'heavy') {
+            img.style.opacity = '0.4';
+            setTimeout(() => {
+              img.style.opacity = '1';
+              show();
+            }, 900);
+          } else {
+            img.style.opacity = '1';
+            show();
+          }
+          const callout = document.getElementById('lcp-callout');
+          callout.textContent =
+            mode === 'heavy' ?
+              'Heavy heroes tend to take over LCP. Look for a later orange marker in the timeline.'
+            : 'Light heroes keep LCP close to FCP. In the panel, LCP should roughly match FCP.';
+        }
+        function runScenario(name) {
+          switch (name) {
+            case 'heavy-css':
+              runCSS('heavy', false);
+              break;
+            case 'blocking-js':
+              runJS('blocking', false);
+              break;
+            case 'layout-thrash':
+              runLayout('thrash', false);
+              break;
+            case 'font-block':
+              runFont('foit', false);
+              break;
+            case 'font-swap':
+              runFont('swap', false);
+              break;
+            case 'heavy-lcp':
+              runLCP('heavy', false);
+              break;
+            default:
+              runCSS('optimized', false);
+              runJS('defer', false);
+              runFont('swap', false);
+              runLCP('light', false);
+          }
+        }
+        return { init, runScenario, runCSS, runJS, runLayout, runFont, runLCP };
+      })();
+
+      /* ---------- ui.js ---------- */
+      const UIModule = (() => {
+        function init() {
+          const select = document.getElementById('scenario-select');
+          select.value = window.__scenario || 'baseline';
+          document.getElementById('scenario-badge').textContent =
+            `Scenario: ${window.__scenario}`;
+          document.getElementById('scenario-note').textContent =
+            scenarioDescriptions[window.__scenario] ||
+            scenarioDescriptions.baseline;
+          document
+            .getElementById('scenario-form')
+            .addEventListener('submit', (e) => {
+              e.preventDefault();
+              const value = select.value;
+              const params = new URLSearchParams(location.search);
+              params.set('scenario', value);
+              const query = params.toString();
+              location.href = `${location.pathname}?${query}`;
+            });
+          document
+            .getElementById('soft-reset')
+            .addEventListener('click', () => {
+              DemosModule.runScenario(window.__scenario);
+              MetricsModule.customMark('Soft rerun', '#0ea5e9');
+            });
+          document
+            .getElementById('hard-reload')
+            .addEventListener('click', () => {
+              location.reload();
+            });
+          setupResourceToggles();
+          updateCallouts();
+        }
+        function updateCallouts() {
+          const callout = document.getElementById('panel-callout');
+          const map = {
+            baseline: 'Baseline load should keep FP/FCP tight.',
+            'heavy-css':
+              'Bloated CSS keeps FCP high—watch the green bar slide right.',
+            'blocking-js':
+              'Parser-blocking JS spikes FP/FCP due to the busy loop in &lt;head&gt;.',
+            'layout-thrash':
+              'Layout thrash creates long tasks and potential CLS.',
+            'font-block':
+              'FOIT hides text, but metrics barely move—user experience still degrades.',
+            'font-swap': 'Swap keeps text visible; LCP unaffected.',
+            'heavy-lcp': 'Heavy hero delays the orange LCP marker.',
+          };
+          callout.textContent = map[window.__scenario] || map.baseline;
+        }
+        function setupResourceToggles() {
+          const visual = document.getElementById('resource-visual');
+          const summary = document.getElementById('resource-summary');
+          const states = { css: true, js: true, img: false };
+          const update = () => {
+            visual.dataset.css = states.css ? 'blocking' : 'async';
+            visual.dataset.js = states.js ? 'blocking' : 'defer';
+            visual.dataset.img = states.img ? 'eager' : 'lazy';
+            document.querySelector('[data-resource-label="css"]').textContent =
+              states.css ? 'Blocking' : 'Async';
+            document.querySelector('[data-resource-label="js"]').textContent =
+              states.js ? 'Blocking' : 'Defer';
+            document.querySelector('[data-resource-label="img"]').textContent =
+              states.img ? 'Eager' : 'Lazy';
+            summary.textContent = `CSS is ${states.css ? '' : 'not '}blocking, JS is ${states.js ? '' : 'not '}blocking, and images are ${states.img ? 'eager' : 'lazy'}, so ${states.css || states.js ? 'something still blocks first paint' : 'everything critical streams right away'}.`;
+          };
+          document
+            .getElementById('css-toggle')
+            .addEventListener('change', (e) => {
+              states.css = e.target.checked;
+              update();
+            });
+          document
+            .getElementById('js-toggle')
+            .addEventListener('change', (e) => {
+              states.js = e.target.checked;
+              update();
+            });
+          document
+            .getElementById('img-toggle')
+            .addEventListener('change', (e) => {
+              states.img = e.target.checked;
+              update();
+            });
+          update();
+        }
+        return { init };
+      })();
+
+      /* ---------- boot ---------- */
+      document.addEventListener('DOMContentLoaded', () => {
+        MetricsModule.init();
+        DemosModule.init();
+        DemosModule.runScenario(window.__scenario || 'baseline');
+        UIModule.init();
+      });
+    </script>
+  </body>
+</html>
